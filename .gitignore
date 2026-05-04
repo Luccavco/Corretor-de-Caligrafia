@@ -1,0 +1,6 @@
+venv/
+__pycache__/
+*.pyc
+*.pth
+test_images/
+reference_letters/
