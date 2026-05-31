@@ -146,6 +146,8 @@ class MainWindow(QMainWindow):
         self.worker.start()
 
     def on_resultado(self, texto, characters):
+        from handwriting_evaluator import avaliar_texto, formatar_feedback
+
         self.progress.setVisible(False)
         self.btn_transcrever.setEnabled(True)
         self.btn_carregar.setEnabled(True)
@@ -153,18 +155,10 @@ class MainWindow(QMainWindow):
 
         self.texto_resultado.setText(texto)
 
-        n_chars = len(characters)
-        self.painel_avaliacao.setText(
-            f"Texto reconhecido com sucesso!\n\n"
-            f"Caracteres detectados: {n_chars}\n\n"
-            f"━━━━━━━━━━━━━━━━━━━━━\n"
-            f"Avaliação de caligrafia\n"
-            f"━━━━━━━━━━━━━━━━━━━━━\n\n"
-            f"Modelo em treinamento.\n"
-            f"A pontuação e o feedback\n"
-            f"por letra estarão disponíveis\n"
-            f"na próxima versão do sistema."
-        )
+        avaliacao = avaliar_texto(characters)
+        feedback = formatar_feedback(avaliacao)
+
+        self.painel_avaliacao.setText(feedback)
         self.painel_avaliacao.setStyleSheet(
             "background-color: #1e1e1e; color: #ccc; padding: 12px;"
         )

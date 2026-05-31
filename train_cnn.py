@@ -1,3 +1,4 @@
+import cv2
 import torch
 import torchvision.datasets as datasets
 import torchvision.transforms as transforms
@@ -69,13 +70,12 @@ class CaligrafiDataset(Dataset):
 
     def __getitem__(self, idx):
         img = self.imagens[idx]
-        # EMNIST é 28x28 1 canal — MobileNet precisa de 3 canais e 224x224
-        img = img.repeat(3, 1, 1)
+        arr = (img.numpy()[0] * 255).astype(np.uint8)
+        _, arr_bin = cv2.threshold(arr, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        img = torch.from_numpy(arr_bin).float() / 255.0
+        img = img.unsqueeze(0).repeat(3, 1, 1)
         img = transforms.functional.resize(img, (224, 224))
-        if self.transform:
-            img = self.transform(img)
         return img, self.labels[idx]
-
 
 # ─── 3. TREINAR CNN ──────────────────────────────────────────────────────────
 
