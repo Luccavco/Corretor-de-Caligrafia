@@ -4,3 +4,5 @@ __pycache__/
 *.pth
 test_images/
 reference_letters/
+data/
+modelo_caligrafia.pth
