@@ -12,7 +12,7 @@ from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel,
     QFileDialog, QTextEdit, QProgressBar, QScrollArea, QGridLayout,
     QSizePolicy, QComboBox, QApplication, QFrame, QMessageBox,
-    QDialog, QListWidget, QListWidgetItem
+    QDialog, QListWidget, QListWidgetItem, QStackedWidget
 )
 from PyQt5.QtGui import QPixmap, QImage, QCursor
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
@@ -219,6 +219,13 @@ class AnaliseWidget(QWidget):
         left_card, left = make_card(None)
         body.addWidget(left_card, 58)
 
+        # Alterna entre o quadro de desenho e a imagem (carregada/analisada)
+        from canvas_desenho import CanvasDesenho
+        self.stack_esquerda = QStackedWidget()
+
+        self.canvas = CanvasDesenho()
+        self.canvas.desenhou.connect(self._on_desenhou)
+
         self.label_imagem = ImagemClicavel()
         self.label_imagem.setAlignment(Qt.AlignCenter)
         self.label_imagem.setMinimumSize(480, 420)
@@ -232,7 +239,11 @@ class AnaliseWidget(QWidget):
         self.label_imagem.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.label_imagem.clicou_para_adicionar.connect(self._adicionar_letra_no_ponto)
         self.label_imagem.clicou_selecao.connect(self._clicou_na_imagem)
-        left.addWidget(self.label_imagem, 1)
+
+        self.stack_esquerda.addWidget(self.canvas)        # indice 0 = desenho
+        self.stack_esquerda.addWidget(self.label_imagem)  # indice 1 = imagem
+        self.stack_esquerda.setCurrentIndex(0)
+        left.addWidget(self.stack_esquerda, 1)
 
         legenda = QHBoxLayout()
         legenda.setSpacing(8)
@@ -263,11 +274,14 @@ class AnaliseWidget(QWidget):
         botoes_img = QHBoxLayout()
         self.btn_carregar = QPushButton("Carregar Imagem")
         self.btn_carregar.clicked.connect(self.carregar_imagem)
+        self.btn_voltar_quadro = QPushButton("Voltar ao Quadro")
+        self.btn_voltar_quadro.setVisible(False)
+        self.btn_voltar_quadro.clicked.connect(self._voltar_ao_quadro)
         self.btn_analisar = QPushButton("Analisar")
         self.btn_analisar.setObjectName("primary")
-        self.btn_analisar.setEnabled(False)
         self.btn_analisar.clicked.connect(self.analisar)
         botoes_img.addWidget(self.btn_carregar)
+        botoes_img.addWidget(self.btn_voltar_quadro)
         botoes_img.addWidget(self.btn_analisar)
         left.addLayout(botoes_img)
 
@@ -395,6 +409,27 @@ class AnaliseWidget(QWidget):
 
     # ── Acoes basicas ───────────────────────────────────────────────
 
+    def _on_desenhou(self):
+        """Primeiro traco no quadro: habilita o botao Analisar."""
+        self.btn_analisar.setEnabled(True)
+
+    def _voltar_ao_quadro(self):
+        """Volta a exibir o quadro de desenho (some a imagem analisada)."""
+        self.image_path = None
+        self.imagem_processada_bgr = None
+        self.letras_por_indice = {}
+        self.letras_manuais = []
+        self.stack_esquerda.setCurrentIndex(0)
+        self.btn_voltar_quadro.setVisible(False)
+        self.btn_toggle_adicionar.setEnabled(False)
+        self.btn_toggle_remover.setEnabled(False)
+        self._desativar_modos()
+        self.texto_resultado.clear()
+        self.label_score.setText("--")
+        self.limpar_detalhe()
+        self.atualizar_chips(None)
+        self.btn_analisar.setEnabled(not self.canvas.esta_vazio())
+
     def carregar_imagem(self):
         path, _ = QFileDialog.getOpenFileName(
             self, "Selecionar Imagem", "",
@@ -414,6 +449,9 @@ class AnaliseWidget(QWidget):
             f"background-color: {C_CARD}; border: 1px solid {C_BORDER};"
             f" border-radius: 10px;"
         )
+        # Mostra a imagem (esconde o quadro) e oferece voltar ao quadro
+        self.stack_esquerda.setCurrentIndex(1)
+        self.btn_voltar_quadro.setVisible(True)
         self.btn_analisar.setEnabled(True)
         self.btn_toggle_adicionar.setEnabled(False)
         self.btn_toggle_remover.setEnabled(False)
@@ -424,6 +462,12 @@ class AnaliseWidget(QWidget):
         self.atualizar_chips(None)
 
     def analisar(self):
+        # Se estiver no modo quadro, salva o desenho como imagem primeiro
+        if self.stack_esquerda.currentIndex() == 0:
+            if self.canvas.esta_vazio():
+                return
+            path = self.canvas.salvar_png()
+            self.definir_imagem(path)
         if not self.image_path:
             return
         self.btn_analisar.setEnabled(False)

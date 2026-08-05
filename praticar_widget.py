@@ -7,6 +7,7 @@
 """
 
 import os
+import random
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel,
     QFileDialog, QTabWidget, QProgressBar, QSizePolicy, QFrame,
@@ -326,7 +327,8 @@ class PainelExercicio(QWidget):
     finalizou = pyqtSignal()
 
     def __init__(self, titulo_alvo, alvos, modo, nivel_atual=None,
-                 meta=5, fonte_alvo=FONTE_FORMA, custom=False):
+                 meta=5, fonte_alvo=FONTE_FORMA, custom=False,
+                 tamanho_alvo=None):
         super().__init__()
         self.titulo_alvo = titulo_alvo
         self.alvos = alvos
@@ -336,6 +338,8 @@ class PainelExercicio(QWidget):
         self.acertos = nivel_atual if modo == "letra" else 0
         self.meta = meta if modo == "letra" else len(alvos)
         self.fonte_alvo = fonte_alvo
+        # Tamanho da fonte do alvo: usa o explicito, senao decide pelo modo
+        self.tamanho_alvo = tamanho_alvo or (200 if modo == "letra" else 84)
         self.worker = None
         self.setup_ui()
 
@@ -385,7 +389,7 @@ class PainelExercicio(QWidget):
 
         self.label_alvo = QLabel()
         self.label_alvo.setAlignment(Qt.AlignCenter)
-        tamanho = 200 if self.modo == "letra" else 84
+        tamanho = self.tamanho_alvo
         self.label_alvo.setStyleSheet(
             f"color: {C_TEXT}; font-size: {tamanho}px; font-weight: 800;"
             f" border: none; font-family: {self.fonte_alvo};"
@@ -396,6 +400,12 @@ class PainelExercicio(QWidget):
         envio_card, envio_layout = make_card(None)
         body.addWidget(envio_card, 55)
 
+        # Stack: quadro de desenho (padrao) OU imagem/foto enviada
+        from canvas_desenho import CanvasDesenho
+        self.stack_envio = QStackedWidget()
+
+        self.canvas = CanvasDesenho()
+
         self.label_imagem = QLabel("Fotografe sua tentativa\ne carregue aqui")
         self.label_imagem.setAlignment(Qt.AlignCenter)
         self.label_imagem.setMinimumSize(360, 300)
@@ -404,7 +414,11 @@ class PainelExercicio(QWidget):
             f" border: 2px dashed {C_BORDER}; border-radius: 10px; font-size: 13px;"
         )
         self.label_imagem.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        envio_layout.addWidget(self.label_imagem, 1)
+
+        self.stack_envio.addWidget(self.canvas)         # indice 0 = desenho
+        self.stack_envio.addWidget(self.label_imagem)   # indice 1 = imagem
+        self.stack_envio.setCurrentIndex(0)
+        envio_layout.addWidget(self.stack_envio, 1)
 
         self.label_feedback = QLabel()
         self.label_feedback.setAlignment(Qt.AlignCenter)
@@ -424,8 +438,12 @@ class PainelExercicio(QWidget):
         botoes = QHBoxLayout()
         self.btn_enviar = QPushButton("Enviar Tentativa")
         self.btn_enviar.setObjectName("primary")
-        self.btn_enviar.clicked.connect(self.carregar_e_verificar)
+        self.btn_enviar.clicked.connect(self.enviar_tentativa)
         botoes.addWidget(self.btn_enviar)
+        self.btn_foto = QPushButton("Enviar Foto")
+        self.btn_foto.setObjectName("ghost")
+        self.btn_foto.clicked.connect(self.carregar_e_verificar)
+        botoes.addWidget(self.btn_foto)
         self.btn_pular = QPushButton("Pular")
         self.btn_pular.setObjectName("ghost")
         self.btn_pular.clicked.connect(self.pular)
@@ -460,6 +478,9 @@ class PainelExercicio(QWidget):
             )
             self._set_barra(self.indice)
 
+        # Volta ao quadro de desenho limpo para a proxima tentativa
+        self.canvas.limpar()
+        self.stack_envio.setCurrentIndex(0)
         self.label_imagem.clear()
         self.label_imagem.setText("Fotografe sua tentativa\ne carregue aqui")
         self.label_imagem.setStyleSheet(
@@ -490,6 +511,8 @@ class PainelExercicio(QWidget):
                 self.label_imagem.setText("Fase completa! Voce desbloqueou a proxima.")
             self.finalizou.emit()
 
+        # Mostra a mensagem final no lugar do quadro
+        self.stack_envio.setCurrentIndex(1)
         self.label_imagem.setStyleSheet(
             f"background-color: {C_CARD}; color: {C_TEXT};"
             f" border: 1px solid {C_BORDER}; border-radius: 10px;"
@@ -499,6 +522,7 @@ class PainelExercicio(QWidget):
         self.btn_enviar.setText("Voltar")
         self._desconectar_btn_enviar()
         self.btn_enviar.clicked.connect(self.voltar.emit)
+        self.btn_foto.setEnabled(False)
         self.btn_pular.setEnabled(False)
 
     def pular(self):
@@ -511,7 +535,8 @@ class PainelExercicio(QWidget):
     def _reset_botao_enviar(self):
         self.btn_enviar.setText("Enviar Tentativa")
         self._desconectar_btn_enviar()
-        self.btn_enviar.clicked.connect(self.carregar_e_verificar)
+        self.btn_enviar.clicked.connect(self.enviar_tentativa)
+        self.btn_foto.setEnabled(True)
         self.btn_pular.setEnabled(True)
 
     def _desconectar_btn_enviar(self):
@@ -520,13 +545,29 @@ class PainelExercicio(QWidget):
         except TypeError:
             pass
 
+    def enviar_tentativa(self):
+        """Envia o que estiver no quadro de desenho para verificacao."""
+        # Garante que o quadro esteja visivel (caso viesse de uma foto)
+        self.stack_envio.setCurrentIndex(0)
+        if self.canvas.esta_vazio():
+            self.label_feedback.setText("Escreva a resposta no quadro antes de enviar.")
+            self.label_feedback.setStyleSheet(
+                f"color: {C_OK}; font-size: 13px; padding: 8px; border: none;"
+            )
+            return
+        path = self.canvas.salvar_png()
+        self._verificar_path(path)
+
     def carregar_e_verificar(self):
+        """Envia uma foto de arquivo para verificacao."""
         path, _ = QFileDialog.getOpenFileName(
             self, "Selecionar sua tentativa", "",
             "Imagens (*.png *.jpg *.jpeg)"
         )
         if not path:
             return
+        # Mostra a foto no lugar do quadro
+        self.stack_envio.setCurrentIndex(1)
         pixmap = QPixmap(path).scaled(
             self.label_imagem.width() - 12,
             self.label_imagem.height() - 12,
@@ -538,7 +579,11 @@ class PainelExercicio(QWidget):
             f"background-color: {C_CARD}; border: 1px solid {C_BORDER};"
             f" border-radius: 10px;"
         )
+        self._verificar_path(path)
+
+    def _verificar_path(self, path):
         self.btn_enviar.setEnabled(False)
+        self.btn_foto.setEnabled(False)
         self.btn_pular.setEnabled(False)
         self.progress.setVisible(True)
         self.label_feedback.setText("Analisando sua tentativa...")
@@ -550,6 +595,7 @@ class PainelExercicio(QWidget):
     def on_verificado(self, texto, avaliacao):
         self.progress.setVisible(False)
         self.btn_enviar.setEnabled(True)
+        self.btn_foto.setEnabled(True)
         self.btn_pular.setEnabled(True)
         alvo = self.alvos[0] if self.modo == "letra" else self.alvos[self.indice]
         acertou, motivo = self._validar(alvo, texto, avaliacao)
@@ -579,6 +625,7 @@ class PainelExercicio(QWidget):
     def on_erro(self, mensagem):
         self.progress.setVisible(False)
         self.btn_enviar.setEnabled(True)
+        self.btn_foto.setEnabled(True)
         self.btn_pular.setEnabled(True)
         self.label_feedback.setText(f"Erro ao processar: {mensagem}")
         self.label_feedback.setStyleSheet(
@@ -868,6 +915,183 @@ class AbaPalavras(QWidget):
         self._construir()
 
 
+class QuizCard(QFrame):
+    """Card de selecao do tipo de quiz (Letras ou Minhas Palavras)."""
+    clicked = pyqtSignal(str)   # "letras" ou "palavras"
+
+    def __init__(self, tipo, icone, titulo, descricao, quantidade, disponivel):
+        super().__init__()
+        self.tipo = tipo
+        self.disponivel = disponivel
+        self.setFixedSize(300, 280)
+        cor_borda = C_ACCENT if disponivel else C_BORDER
+        hover = f"QFrame:hover {{ border: 1px solid {C_ACCENT}; }}" if disponivel else ""
+        self.setStyleSheet(
+            f"QFrame {{ background-color: {C_PANEL};"
+            f" border: 1px solid {cor_borda}; border-radius: 14px; }}"
+            + hover
+        )
+        if disponivel:
+            self.setCursor(QCursor(Qt.PointingHandCursor))
+
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(22, 24, 22, 24)
+        layout.setSpacing(14)
+        layout.setAlignment(Qt.AlignTop)
+
+        lbl_icone = QLabel(icone)
+        lbl_icone.setAlignment(Qt.AlignCenter)
+        lbl_icone.setFixedSize(90, 90)
+        # Fonte do icone menor quando e texto (ABC) do que quando e um simbolo
+        tam_icone = 30 if len(icone) > 1 else 40
+        lbl_icone.setStyleSheet(
+            f"background-color: {C_CARD}; color: {C_ACCENT};"
+            f" border: 2px solid {C_ACCENT}; border-radius: 45px;"
+            f" font-size: {tam_icone}px; font-weight: 800;"
+        )
+        layout.addWidget(lbl_icone, alignment=Qt.AlignHCenter)
+
+        lbl_titulo = QLabel(titulo)
+        lbl_titulo.setAlignment(Qt.AlignCenter)
+        lbl_titulo.setStyleSheet(
+            f"color: {C_TEXT}; font-size: 21px; font-weight: 800; border: none;"
+        )
+        layout.addWidget(lbl_titulo)
+
+        lbl_desc = QLabel(descricao)
+        lbl_desc.setAlignment(Qt.AlignHCenter | Qt.AlignTop)
+        lbl_desc.setWordWrap(True)
+        lbl_desc.setFixedHeight(56)
+        lbl_desc.setStyleSheet(
+            f"color: {C_MUTED}; font-size: 14px; border: none;"
+        )
+        layout.addWidget(lbl_desc)
+
+        info = QLabel(
+            f"{quantidade} itens disponiveis" if disponivel
+            else "Indisponivel"
+        )
+        info.setAlignment(Qt.AlignCenter)
+        info.setStyleSheet(
+            f"color: {C_ACCENT if disponivel else C_MUTED};"
+            f" font-size: 13px; font-weight: 600; border: none;"
+        )
+        layout.addWidget(info)
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton and self.disponivel:
+            self.clicked.emit(self.tipo)
+
+
+class AbaQuiz(QWidget):
+    """Aba de quiz: a pessoa e questionada aleatoriamente sobre como se
+    escreve uma letra do alfabeto ou uma das palavras que cadastrou."""
+    quiz_selecionado = pyqtSignal(str)   # "letras" ou "palavras"
+
+    def __init__(self, estado):
+        super().__init__()
+        self.estado = estado
+        self._layout_raiz = QVBoxLayout(self)
+        self._layout_raiz.setContentsMargins(20, 20, 20, 20)
+        self._layout_raiz.setSpacing(14)
+        self._construir()
+
+    def _limpar(self):
+        while self._layout_raiz.count():
+            item = self._layout_raiz.takeAt(0)
+            w = item.widget()
+            if w is not None:
+                w.setParent(None)
+                w.deleteLater()
+            else:
+                sub = item.layout()
+                if sub is not None:
+                    self._limpar_layout(sub)
+
+    def _limpar_layout(self, lay):
+        while lay.count():
+            item = lay.takeAt(0)
+            w = item.widget()
+            if w is not None:
+                w.setParent(None)
+                w.deleteLater()
+            else:
+                sub = item.layout()
+                if sub is not None:
+                    self._limpar_layout(sub)
+
+    def _construir(self):
+        # Cabecalho padronizado (mesma estrutura das outras abas)
+        header = QHBoxLayout()
+        titulo = QLabel("Quiz de Caligrafia")
+        titulo.setStyleSheet(
+            f"color: {C_TEXT}; font-size: 18px; font-weight: 800;"
+        )
+        sub = QLabel("responda como se escreve cada item sorteado")
+        sub.setStyleSheet(f"color: {C_MUTED}; font-size: 13px;")
+        header.addWidget(titulo)
+        header.addSpacing(12)
+        header.addWidget(sub)
+        header.addStretch()
+        header_wrap = QWidget()
+        header_wrap.setFixedHeight(36)
+        header_wrap.setLayout(header)
+        self._layout_raiz.addWidget(header_wrap)
+
+        # Linha vazia de mesma altura para alinhar com as outras abas
+        espacador = QWidget()
+        espacador.setFixedHeight(28)
+        self._layout_raiz.addWidget(espacador)
+
+        self._layout_raiz.addStretch(1)
+
+        explicacao = QLabel(
+            "Escolha um tipo de quiz. O sistema vai sortear os itens em ordem "
+            "aleatoria e voce escreve cada um no quadro (ou envia uma foto). "
+            "Ao final, voce ve quantos acertou."
+        )
+        explicacao.setAlignment(Qt.AlignCenter)
+        explicacao.setWordWrap(True)
+        explicacao.setMaximumWidth(720)
+        explicacao.setStyleSheet(
+            f"color: {C_TEXT}; font-size: 18px; line-height: 1.6;"
+        )
+        self._layout_raiz.addWidget(explicacao, alignment=Qt.AlignHCenter)
+
+        self._layout_raiz.addSpacing(24)
+
+        cards_wrap = QHBoxLayout()
+        cards_wrap.setSpacing(28)
+        cards_wrap.addStretch()
+
+        card_letras = QuizCard(
+            "letras", "ABC", "Quiz de Letras",
+            "Sorteia letras do alfabeto para voce escrever.",
+            len(LETRAS), disponivel=True,
+        )
+        card_letras.clicked.connect(self.quiz_selecionado.emit)
+        cards_wrap.addWidget(card_letras)
+
+        minhas = self.estado.get("palavras_customizadas", [])
+        card_palavras = QuizCard(
+            "palavras", "Aa", "Quiz de Palavras",
+            "Sorteia palavras da sua lista 'Minhas Palavras'."
+            if minhas else
+            "Cadastre palavras em Palavras > Adicionar palavras para liberar.",
+            len(minhas), disponivel=len(minhas) > 0,
+        )
+        card_palavras.clicked.connect(self.quiz_selecionado.emit)
+        cards_wrap.addWidget(card_palavras)
+
+        cards_wrap.addStretch()
+        self._layout_raiz.addLayout(cards_wrap)
+        self._layout_raiz.addStretch(2)
+
+    def reconstruir(self):
+        self._limpar()
+        self._construir()
+
+
 class PraticarWidget(QWidget):
     voltar_solicitado = pyqtSignal()
 
@@ -908,8 +1132,11 @@ class PraticarWidget(QWidget):
         self.aba_palavras.fase_selecionada.connect(self.iniciar_fase)
         self.aba_palavras.fase_custom_selecionada.connect(self.iniciar_fase_custom)
         self.aba_palavras.gerenciar_solicitado.connect(self.abrir_gerenciador)
+        self.aba_quiz = AbaQuiz(self.estado)
+        self.aba_quiz.quiz_selecionado.connect(self.iniciar_quiz)
         self.menu.addTab(self.aba_letras, "Letras")
         self.menu.addTab(self.aba_palavras, "Palavras")
+        self.menu.addTab(self.aba_quiz, "Quiz")
 
         self.stack.addWidget(self.menu)
         self.painel_exercicio = None
@@ -923,6 +1150,7 @@ class PraticarWidget(QWidget):
     def _voltar_menu(self):
         self.aba_letras.reconstruir()
         self.aba_palavras.reconstruir()
+        self.aba_quiz.reconstruir()
         self.stack.setCurrentWidget(self.menu)
         if self.painel_exercicio is not None:
             self.stack.removeWidget(self.painel_exercicio)
@@ -967,6 +1195,37 @@ class PraticarWidget(QWidget):
             alvos=palavras,
             modo="fase",
             custom=True,
+        )
+        self.painel_exercicio.voltar.connect(self._voltar_menu)
+        self.stack.addWidget(self.painel_exercicio)
+        self.stack.setCurrentWidget(self.painel_exercicio)
+
+    def iniciar_quiz(self, tipo):
+        """Inicia um quiz de letras ou de palavras. Os itens sao
+        sorteados em ordem aleatoria; a pessoa escreve cada um e ao
+        final ve o total de acertos. Reaproveita o modo 'fase' do
+        PainelExercicio (sequencia de alvos), mas embaralhada."""
+        if tipo == "letras":
+            itens = list(LETRAS)
+            # Sorteia um subconjunto para o quiz nao ficar longo demais
+            random.shuffle(itens)
+            itens = itens[:10]
+            titulo = "QUIZ DE LETRAS - ESCREVA A LETRA SORTEADA"
+            tamanho_alvo = 200   # letra unica: alvo grande
+        else:
+            itens = list(self.estado.get("palavras_customizadas", []))
+            if not itens:
+                return
+            random.shuffle(itens)
+            titulo = "QUIZ DE PALAVRAS - ESCREVA A PALAVRA SORTEADA"
+            tamanho_alvo = 84    # palavras: alvo menor para caber
+
+        self.painel_exercicio = PainelExercicio(
+            titulo_alvo=titulo,
+            alvos=itens,
+            modo="fase",     # sequencia de alvos, sem alterar niveis
+            custom=True,     # nao desbloqueia fases nem conta progresso
+            tamanho_alvo=tamanho_alvo,
         )
         self.painel_exercicio.voltar.connect(self._voltar_menu)
         self.stack.addWidget(self.painel_exercicio)
