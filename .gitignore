@@ -6,3 +6,11 @@ test_images/
 reference_letters/
 data/
 modelo_caligrafia.pth
+google_credentials.json
+progresso.json
+firebase_credentials.json
+sessao.json
+build/
+dist/
+*.spec
+*.pdf
