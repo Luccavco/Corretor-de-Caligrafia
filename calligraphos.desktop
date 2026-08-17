@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Calligraphos
+GenericName=Avaliador de Caligrafia
+Comment=Reconhecimento e avaliacao de caligrafia com IA
+Exec=/home/luccavco/tcc-caligrafia/calligraphos.sh
+Icon=/home/luccavco/tcc-caligrafia/calligraphos.png
+Terminal=false
+Categories=Education;Utility;
+StartupWMClass=Calligraphos
+StartupNotify=true

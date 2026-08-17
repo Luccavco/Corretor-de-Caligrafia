@@ -6,17 +6,72 @@
 """
 
 import sys
+import os
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QPushButton, QLabel, QStackedWidget, QFrame, QSizePolicy, QComboBox,
-    QMessageBox
+    QMessageBox, QSplashScreen, QSystemTrayIcon, QMenu, QAction
 )
-from PyQt5.QtGui import QCursor
-from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QCursor, QPixmap, QPainter, QColor, QFont, QIcon
+from PyQt5.QtCore import Qt, QTimer, QThread
 
 from ui_theme import (
-    STYLE, C_PANEL, C_CARD, C_TEXT, C_MUTED, C_BORDER, C_ACCENT,
+    STYLE, C_PANEL, C_CARD, C_TEXT, C_MUTED, C_BORDER, C_ACCENT, C_BG,
+    C_GOOD, C_OK, C_BAD,
 )
+
+
+def _caminho_icone():
+    """Acha o calligraphos.png na raiz do projeto (mesma pasta deste
+    arquivo). Devolve None se nao existir, para o app nao quebrar caso
+    o icone ainda nao tenha sido copiado para a pasta."""
+    caminho = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "calligraphos.png"
+    )
+    return caminho if os.path.exists(caminho) else None
+
+
+def criar_splash():
+    """Cria uma tela de abertura (splash) estilo Adobe: fundo escuro,
+    nome do programa ao centro e uma mensagem de carregamento embaixo.
+    Desenhada em memoria, sem depender de arquivo de imagem."""
+    largura, altura = 560, 340
+    pix = QPixmap(largura, altura)
+    pix.fill(QColor(C_BG))
+
+    painter = QPainter(pix)
+    painter.setRenderHint(QPainter.Antialiasing)
+
+    # Moldura sutil
+    painter.setPen(QColor(C_BORDER))
+    painter.drawRect(0, 0, largura - 1, altura - 1)
+
+    # Nome do programa ao centro
+    fonte_titulo = QFont("Cambria", 46, QFont.Bold)
+    painter.setFont(fonte_titulo)
+    painter.setPen(QColor(C_TEXT))
+    painter.drawText(
+        0, 90, largura, 80, Qt.AlignHCenter | Qt.AlignVCenter, "Calligraphos"
+    )
+
+    # Subtitulo
+    fonte_sub = QFont("Arial", 13)
+    painter.setFont(fonte_sub)
+    painter.setPen(QColor(C_MUTED))
+    painter.drawText(
+        0, 170, largura, 30, Qt.AlignHCenter,
+        "Reconhecimento e Avaliacao de Caligrafia"
+    )
+
+    # Linha de destaque
+    painter.setPen(QColor(C_ACCENT))
+    painter.drawLine(largura // 2 - 60, 215, largura // 2 + 60, 215)
+
+    painter.end()
+
+    splash = QSplashScreen(pix)
+    splash.setWindowFlag(Qt.WindowStaysOnTopHint)
+    return splash
 
 
 class ModoCard(QFrame):
@@ -69,8 +124,10 @@ class ModoCard(QFrame):
 
 
 class TelaInicial(QWidget):
-    def __init__(self, email, ir_para_praticar, ir_para_analise, ir_para_config):
+    def __init__(self, email, estado, ir_para_praticar, ir_para_analise,
+                 ir_para_config):
         super().__init__()
+        self.estado = estado
         layout = QVBoxLayout(self)
         layout.setContentsMargins(40, 24, 40, 24)
         layout.setSpacing(0)
@@ -104,8 +161,13 @@ class TelaInicial(QWidget):
         )
         layout.addWidget(titulo)
 
-        # Espacamento IGUAL entre titulo -> subtitulo -> cards
-        layout.addSpacing(28)
+        layout.addSpacing(20)
+
+        # Faixa de lembrete: meta diaria + revisoes pendentes
+        faixa = self._faixa_lembrete()
+        if faixa is not None:
+            layout.addWidget(faixa, alignment=Qt.AlignHCenter)
+            layout.addSpacing(20)
 
         sub = QLabel("Escolha o que voce quer fazer")
         sub.setAlignment(Qt.AlignCenter)
@@ -152,6 +214,88 @@ class TelaInicial(QWidget):
         rodape.addWidget(btn_tutorial)
         layout.addLayout(rodape)
 
+    def _faixa_lembrete(self):
+        """Monta a faixa com meta diaria e revisoes pendentes. Devolve None
+        se o usuario ainda nao comecou a praticar (nada a lembrar)."""
+        import progresso as prog
+        if self.estado is None:
+            return None
+
+        feitos, meta = prog.progresso_meta_diaria(self.estado)
+        pendentes = prog.revisoes_pendentes(self.estado)
+
+        # Nada a mostrar se o usuario nunca praticou nem tem meta relevante
+        exercicios = self.estado.get("exercicios_feitos", 0)
+        if exercicios == 0 and not pendentes:
+            return None
+
+        card = QFrame()
+        card.setStyleSheet(
+            f"QFrame {{ background-color: {C_PANEL};"
+            f" border: 1px solid {C_BORDER}; border-radius: 14px; }}"
+        )
+        card.setMaximumWidth(760)
+        lay = QHBoxLayout(card)
+        lay.setContentsMargins(24, 16, 24, 16)
+        lay.setSpacing(30)
+
+        # Bloco meta diaria
+        bloco_meta = QVBoxLayout()
+        bloco_meta.setSpacing(2)
+        cumpriu = feitos >= meta
+        cor_meta = C_ACCENT if not cumpriu else C_GOOD
+        lbl_meta_val = QLabel(f"{feitos} / {meta}")
+        lbl_meta_val.setStyleSheet(
+            f"color: {cor_meta}; font-size: 22px; font-weight: 800;"
+            f" border: none; background: transparent;"
+        )
+        bloco_meta.addWidget(lbl_meta_val)
+        lbl_meta_rot = QLabel(
+            "meta diaria cumprida!" if cumpriu else "exercicios hoje (meta diaria)"
+        )
+        lbl_meta_rot.setStyleSheet(
+            f"color: {C_MUTED}; font-size: 12px; border: none;"
+            f" background: transparent;"
+        )
+        bloco_meta.addWidget(lbl_meta_rot)
+        lay.addLayout(bloco_meta)
+
+        # Separador
+        sep = QFrame()
+        sep.setFrameShape(QFrame.VLine)
+        sep.setStyleSheet(f"color: {C_BORDER}; background: {C_BORDER};")
+        sep.setFixedWidth(1)
+        lay.addWidget(sep)
+
+        # Bloco revisoes pendentes
+        bloco_rev = QVBoxLayout()
+        bloco_rev.setSpacing(2)
+        n_pend = len(pendentes)
+        cor_rev = C_OK if n_pend > 0 else C_MUTED
+        lbl_rev_val = QLabel(str(n_pend))
+        lbl_rev_val.setStyleSheet(
+            f"color: {cor_rev}; font-size: 22px; font-weight: 800;"
+            f" border: none; background: transparent;"
+        )
+        bloco_rev.addWidget(lbl_rev_val)
+        if n_pend > 0:
+            texto_rev = (
+                f"letra para revisar: {', '.join(pendentes)}" if n_pend <= 8
+                else f"letras para revisar hoje"
+            )
+        else:
+            texto_rev = "nenhuma revisao pendente"
+        lbl_rev_rot = QLabel(texto_rev)
+        lbl_rev_rot.setWordWrap(True)
+        lbl_rev_rot.setStyleSheet(
+            f"color: {C_MUTED}; font-size: 12px; border: none;"
+            f" background: transparent;"
+        )
+        bloco_rev.addWidget(lbl_rev_rot)
+        lay.addLayout(bloco_rev, 1)
+
+        return card
+
     def _abrir_sobre(self):
         QMessageBox.about(
             self, "Sobre o Calligraphos",
@@ -195,6 +339,10 @@ class MainWindow(QMainWindow):
         self.setMinimumSize(1180, 720)
         self.setStyleSheet(STYLE)
 
+        icone_path = _caminho_icone()
+        if icone_path:
+            self.setWindowIcon(QIcon(icone_path))
+
         self.stack = QStackedWidget()
         self.setCentralWidget(self.stack)
 
@@ -208,7 +356,115 @@ class MainWindow(QMainWindow):
         self.analise = None
         self.config = None
 
+        # Controle da bandeja/lembrete diario
+        self.tray = None
+        self._avisou_bandeja = False   # avisa 1x que o app continua na bandeja
+        self._saindo_de_verdade = False
+        self._timer_lembrete = None
+
+        self._configurar_bandeja()
         self._tentar_autologin()
+
+    # ── Bandeja do sistema e lembrete diario ──────────────────────────
+
+    def _configurar_bandeja(self):
+        """Cria o icone na bandeja do sistema, com menu de acesso rapido.
+        O app continua rodando ai mesmo com a janela fechada, para poder
+        lembrar a pessoa de praticar mais tarde no dia."""
+        if not QSystemTrayIcon.isSystemTrayAvailable():
+            return   # ambiente sem bandeja (raro, mas nao pode quebrar o app)
+
+        icone_path = _caminho_icone()
+        icone = QIcon(icone_path) if icone_path else self.windowIcon()
+
+        self.tray = QSystemTrayIcon(icone, self)
+        self.tray.setToolTip("Calligraphos")
+
+        menu = QMenu()
+        acao_abrir = QAction("Abrir Calligraphos", self)
+        acao_abrir.triggered.connect(self._mostrar_janela)
+        menu.addAction(acao_abrir)
+
+        acao_praticar = QAction("Praticar agora", self)
+        acao_praticar.triggered.connect(self._praticar_pela_bandeja)
+        menu.addAction(acao_praticar)
+
+        menu.addSeparator()
+
+        acao_sair = QAction("Sair", self)
+        acao_sair.triggered.connect(self._sair_de_verdade)
+        menu.addAction(acao_sair)
+
+        self.tray.setContextMenu(menu)
+        self.tray.activated.connect(self._bandeja_clicada)
+        self.tray.show()
+
+    def _bandeja_clicada(self, motivo):
+        # Clique simples ou duplo alterna: mostra a janela
+        if motivo in (QSystemTrayIcon.Trigger, QSystemTrayIcon.DoubleClick):
+            self._mostrar_janela()
+
+    def _mostrar_janela(self):
+        self.showNormal()
+        self.raise_()
+        self.activateWindow()
+
+    def _praticar_pela_bandeja(self):
+        self._mostrar_janela()
+        if self.sessao is not None:
+            self._abrir_praticar()
+
+    def _sair_de_verdade(self):
+        """Encerra o app de verdade (diferente de fechar a janela, que
+        so minimiza para a bandeja)."""
+        self._saindo_de_verdade = True
+        if self.tray:
+            self.tray.hide()
+        QApplication.instance().quit()
+
+    def closeEvent(self, event):
+        # Fechar a janela (X) minimiza para a bandeja em vez de encerrar
+        # o app - assim o lembrete diario continua funcionando mesmo com
+        # a janela fechada. "Sair" no menu da bandeja encerra de verdade.
+        if self._saindo_de_verdade or self.tray is None:
+            event.accept()
+            return
+        event.ignore()
+        self.hide()
+        if not self._avisou_bandeja:
+            self._avisou_bandeja = True
+            self.tray.showMessage(
+                "Calligraphos continua rodando",
+                "O programa continua na bandeja do sistema. Clique no "
+                "icone para abrir de novo, ou use 'Sair' para encerrar.",
+                QSystemTrayIcon.Information,
+                5000,
+            )
+
+    def _iniciar_lembrete_diario(self):
+        """Configura a verificacao periodica da meta diaria (roda mesmo
+        com a janela minimizada na bandeja)."""
+        if self._timer_lembrete is None:
+            self._timer_lembrete = QTimer(self)
+            self._timer_lembrete.timeout.connect(self._verificar_lembrete_diario)
+            self._timer_lembrete.start(3 * 60 * 60 * 1000)   # a cada 3 horas
+        # Primeira checagem pouco depois do login
+        QTimer.singleShot(4000, self._verificar_lembrete_diario)
+
+    def _verificar_lembrete_diario(self):
+        if self.tray is None or self.estado is None:
+            return
+        import progresso as prog
+        feitos, meta = prog.progresso_meta_diaria(self.estado)
+        if feitos < meta:
+            faltam = meta - feitos
+            self.tray.showMessage(
+                "Hora de praticar!",
+                f"Voce ainda nao bateu sua meta diaria. Faltam {faltam} "
+                f"exercicio(s) para chegar em {meta}.",
+                QSystemTrayIcon.Information,
+                6000,
+            )
 
     # ── Fluxo inicial ──────────────────────────────────────────────
 
@@ -241,6 +497,9 @@ class MainWindow(QMainWindow):
         import progresso as prog
         self.estado = prog.carregar(sessao["uid"])
 
+        # Comeca a verificacao periodica da meta diaria (bandeja)
+        self._iniciar_lembrete_diario()
+
         if not self.estado.get("onboarding_visto", False):
             self._mostrar_onboarding()
         else:
@@ -264,36 +523,50 @@ class MainWindow(QMainWindow):
     # ── Tela inicial ───────────────────────────────────────────────
 
     def _mostrar_inicio(self):
-        if self.inicio is None:
-            self.inicio = TelaInicial(
-                self.sessao["email"],
-                self._abrir_praticar,
-                self._abrir_analise,
-                self._abrir_config,
-            )
-            self.stack.addWidget(self.inicio)
+        # Recria a tela inicial para a faixa de lembrete refletir o
+        # progresso mais recente (meta diaria, revisoes pendentes)
+        if self.inicio is not None:
+            self.stack.removeWidget(self.inicio)
+            self.inicio.deleteLater()
+        self.inicio = TelaInicial(
+            self.sessao["email"],
+            self.estado,
+            self._abrir_praticar,
+            self._abrir_analise,
+            self._abrir_config,
+        )
+        self.stack.addWidget(self.inicio)
         self.stack.setCurrentWidget(self.inicio)
 
     # ── Modos ──────────────────────────────────────────────────────
 
     def _abrir_praticar(self):
         if self.praticar is None:
-            from praticar_widget import PraticarWidget
-            self.praticar = PraticarWidget(self.sessao["uid"], self.estado)
-            self.praticar.voltar_solicitado.connect(self._voltar_inicio)
-            self.stack.addWidget(self.praticar)
+            # Primeira abertura carrega o modulo: mostra cursor de espera
+            QApplication.setOverrideCursor(Qt.WaitCursor)
+            try:
+                from praticar_widget import PraticarWidget
+                self.praticar = PraticarWidget(self.sessao["uid"], self.estado)
+                self.praticar.voltar_solicitado.connect(self._voltar_inicio)
+                self.stack.addWidget(self.praticar)
+            finally:
+                QApplication.restoreOverrideCursor()
         self.stack.setCurrentWidget(self.praticar)
 
     def _abrir_analise(self):
         if self.analise is None:
-            from analise_widget import AnaliseWidget
-            self.analise = AnaliseWidget(
-                tem_conta=True,
-                estado_progresso=self.estado,
-            )
-            self.analise.voltar_solicitado.connect(self._voltar_inicio)
-            self.analise.treinar_letra.connect(self._pediu_treinar_letra)
-            self.stack.addWidget(self.analise)
+            QApplication.setOverrideCursor(Qt.WaitCursor)
+            try:
+                from analise_widget import AnaliseWidget
+                self.analise = AnaliseWidget(
+                    tem_conta=True,
+                    estado_progresso=self.estado,
+                )
+                self.analise.voltar_solicitado.connect(self._voltar_inicio)
+                self.analise.treinar_letra.connect(self._pediu_treinar_letra)
+                self.stack.addWidget(self.analise)
+            finally:
+                QApplication.restoreOverrideCursor()
         else:
             self.analise.atualizar_estado_progresso(self.estado)
         self.stack.setCurrentWidget(self.analise)
@@ -343,9 +616,72 @@ class MainWindow(QMainWindow):
         self._mostrar_login()
 
 
+class PreCarregador(QThread):
+    """Carrega em segundo plano as bibliotecas pesadas (OpenCV, PyTorch,
+    Transformers) enquanto a splash screen aparece. O primeiro 'import'
+    dessas bibliotecas e lento (varios segundos); depois de importadas
+    uma vez, o Python guarda em cache e reusa instantaneamente. Isso
+    elimina a demora perceptivel ao abrir Praticar ou Analise Individual
+    pela primeira vez, porque quando o usuario clica, essas bibliotecas
+    ja estao carregadas na memoria.
+
+    So faz os IMPORTS (nada de carregar modelo nem criar janelas - isso
+    continua acontecendo sob demanda, como antes)."""
+
+    def run(self):
+        try:
+            import cv2          # noqa: F401
+            import torch        # noqa: F401
+            import transformers  # noqa: F401
+        except Exception:
+            # Se algo falhar aqui, nao tem problema: os imports normais
+            # (mais lentos) acontecem de qualquer forma quando a pessoa
+            # abrir Praticar ou Analise
+            pass
+
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     app.setStyle("Fusion")
+    # O app continua rodando na bandeja mesmo com a janela escondida
+    # (fechar pelo X so minimiza; "Sair" no menu da bandeja e que encerra)
+    app.setQuitOnLastWindowClosed(False)
+
+    # Tela de abertura (splash) estilo Adobe
+    splash = criar_splash()
+    splash.show()
+    splash.showMessage(
+        "  Iniciando...", Qt.AlignBottom | Qt.AlignHCenter, QColor(C_MUTED)
+    )
+    app.processEvents()
+
+    # Comeca a carregar as bibliotecas pesadas (OpenCV, PyTorch,
+    # Transformers) EM PARALELO, enquanto a splash aparece e o Firebase
+    # carrega a sessao. Isso e o que elimina o lag ao abrir Praticar ou
+    # Analise Individual pela primeira vez - quando a pessoa clicar,
+    # essas bibliotecas normalmente ja estarao prontas na memoria.
+    precarregador = PreCarregador()
+    precarregador.start()
+
+    # A criacao da MainWindow dispara autologin, Firebase e imports pesados.
+    # As mensagens dao a sensacao de progresso enquanto isso acontece.
+    splash.showMessage(
+        "  Carregando modulos...", Qt.AlignBottom | Qt.AlignHCenter, QColor(C_MUTED)
+    )
+    app.processEvents()
+
     window = MainWindow()
-    window.show()
+
+    splash.showMessage(
+        "  Preparando interface...", Qt.AlignBottom | Qt.AlignHCenter, QColor(C_MUTED)
+    )
+    app.processEvents()
+
+    # Garante um tempo minimo visivel da splash (sensacao de "programa pesado"
+    # abrindo rapido) e entao troca para a janela principal
+    def _exibir_janela_principal():
+        window.show()
+        splash.finish(window)
+
+    QTimer.singleShot(1400, _exibir_janela_principal)
     sys.exit(app.exec_())

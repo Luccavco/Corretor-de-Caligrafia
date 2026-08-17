@@ -7,6 +7,7 @@
 """
 
 import os
+import re
 import random
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel,
@@ -162,7 +163,7 @@ class FaseCard(QFrame):
         super().__init__()
         self.indice = indice
         self.desbloqueada = desbloqueada
-        self.setFixedSize(250, 250)
+        self.setFixedSize(300, 300)
         if custom:
             cor_borda = C_ACCENT
         else:
@@ -170,20 +171,20 @@ class FaseCard(QFrame):
         hover_rule = f"QFrame:hover {{ border: 1px solid {C_ACCENT}; }}" if desbloqueada else ""
         self.setStyleSheet(
             f"QFrame {{ background-color: {C_PANEL};"
-            f" border: 1px solid {cor_borda}; border-radius: 14px; }}"
+            f" border: 1px solid {cor_borda}; border-radius: 16px; }}"
             + hover_rule
         )
         if desbloqueada:
             self.setCursor(QCursor(Qt.PointingHandCursor))
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(20, 18, 20, 18)
-        layout.setSpacing(10)
+        layout.setContentsMargins(24, 22, 24, 22)
+        layout.setSpacing(12)
 
         topo = QHBoxLayout()
         num = QLabel("Personalizada" if custom else f"Fase {indice + 1}")
         num.setStyleSheet(
-            f"color: {C_MUTED}; font-size: 11px; font-weight: 700;"
+            f"color: {C_MUTED}; font-size: 13px; font-weight: 700;"
             f" letter-spacing: 1.5px; border: none;"
         )
         topo.addWidget(num)
@@ -198,27 +199,28 @@ class FaseCard(QFrame):
             status_txt, cor_st = "Bloqueada", C_MUTED
         status = QLabel(status_txt)
         status.setStyleSheet(
-            f"color: {cor_st}; font-size: 11px; font-weight: 700; border: none;"
+            f"color: {cor_st}; font-size: 13px; font-weight: 700; border: none;"
         )
         topo.addWidget(status)
         layout.addLayout(topo)
 
         lbl_nome = QLabel(nome)
+        lbl_nome.setWordWrap(True)
         lbl_nome.setStyleSheet(
-            f"color: {C_TEXT}; font-size: 22px; font-weight: 800; border: none;"
+            f"color: {C_TEXT}; font-size: 26px; font-weight: 800; border: none;"
         )
         layout.addWidget(lbl_nome)
 
         desc = QLabel(descricao)
         desc.setWordWrap(True)
-        desc.setStyleSheet(f"color: {C_MUTED}; font-size: 13px; border: none;")
+        desc.setStyleSheet(f"color: {C_MUTED}; font-size: 15px; border: none;")
         desc.setAlignment(Qt.AlignTop)
         layout.addWidget(desc, 1)
 
         info = QLabel(f"{n_palavras} palavra(s)")
         info.setStyleSheet(
             f"color: {C_ACCENT if desbloqueada else C_MUTED};"
-            f" font-size: 12px; font-weight: 600; border: none;"
+            f" font-size: 14px; font-weight: 600; border: none;"
         )
         layout.addWidget(info)
 
@@ -349,6 +351,7 @@ class PainelExercicio(QWidget):
         layout.setSpacing(14)
 
         header = QHBoxLayout()
+        header.setContentsMargins(0, 0, 0, 0)
         btn_voltar = QPushButton("Voltar")
         btn_voltar.setObjectName("ghost")
         btn_voltar.setFixedWidth(90)
@@ -463,7 +466,8 @@ class PainelExercicio(QWidget):
             if self.acertos >= self.meta:
                 self.mostrar_final()
                 return
-            self.label_alvo.setText(self.alvos[0])
+            alvo_atual = self.alvos[0]
+            self.label_alvo.setText(alvo_atual)
             self.label_progresso.setText(
                 f"Progresso da letra: {self.acertos}/{self.meta}"
             )
@@ -472,14 +476,17 @@ class PainelExercicio(QWidget):
             if self.indice >= len(self.alvos):
                 self.mostrar_final()
                 return
-            self.label_alvo.setText(self.alvos[self.indice])
+            alvo_atual = self.alvos[self.indice]
+            self.label_alvo.setText(alvo_atual)
             self.label_progresso.setText(
                 f"{self.indice + 1}/{len(self.alvos)}  ·  {self.acertos} acertos"
             )
             self._set_barra(self.indice)
 
-        # Volta ao quadro de desenho limpo para a proxima tentativa
+        # Volta ao quadro de desenho limpo para a proxima tentativa, com
+        # a letra/palavra-alvo como guia transparente para tracing
         self.canvas.limpar()
+        self.canvas.definir_guia(alvo_atual)
         self.stack_envio.setCurrentIndex(0)
         self.label_imagem.clear()
         self.label_imagem.setText("Fotografe sua tentativa\ne carregue aqui")
@@ -494,6 +501,7 @@ class PainelExercicio(QWidget):
         self._reset_botao_enviar()
 
     def mostrar_final(self):
+        self.canvas.limpar_guia()
         if self.modo == "letra":
             self.label_alvo.setText("OK")
             self.label_progresso.setText(f"Letra '{self.alvos[0]}' dominada!")
@@ -502,13 +510,27 @@ class PainelExercicio(QWidget):
         else:
             total = len(self.alvos)
             percentual = round(100 * self.acertos / total) if total else 0
-            self.label_alvo.setText(f"{percentual}%")
-            self.label_progresso.setText(f"Concluido - {self.acertos}/{total} acertos")
+            # Mostra a fracao de acertos (mais claro que um "0%" solto)
+            self.label_alvo.setText(f"{self.acertos}/{total}")
+            self.label_progresso.setText(f"Concluido - {self.acertos} de {total} acertos")
             self._set_barra(total)
-            if self.custom:
-                self.label_imagem.setText("Treino das suas palavras concluido!")
+            # Mensagem varia conforme o desempenho
+            if percentual >= 80:
+                msg = "Excelente trabalho! Voce mandou muito bem."
+            elif percentual >= 50:
+                msg = "Bom trabalho! Continue praticando para melhorar."
+            elif percentual > 0:
+                msg = "Voce concluiu! Pratique mais para acertar todas."
             else:
-                self.label_imagem.setText("Fase completa! Voce desbloqueou a proxima.")
+                msg = "Nao desanime! Tente de novo com calma, voce consegue."
+            if self.custom:
+                self.label_imagem.setText(msg)
+            elif percentual > 0:
+                self.label_imagem.setText(
+                    "Fase concluida! Voce desbloqueou a proxima.\n\n" + msg
+                )
+            else:
+                self.label_imagem.setText(msg)
             self.finalizou.emit()
 
         # Mostra a mensagem final no lugar do quadro
@@ -744,32 +766,34 @@ class AbaLetras(QWidget):
         # linha 1 = titulo + subtitulo + acao a direita (altura fixa)
         # linha 2 = barra de progresso geral (altura fixa)
         header = QHBoxLayout()
+        header.setContentsMargins(0, 0, 0, 0)
         titulo = QLabel("Progresso das Letras")
         titulo.setStyleSheet(
-            f"color: {C_TEXT}; font-size: 18px; font-weight: 800;"
+            f"color: {C_TEXT}; font-size: 31px; font-weight: 800;"
         )
         sub = QLabel("clique em uma letra para praticar")
-        sub.setStyleSheet(f"color: {C_MUTED}; font-size: 13px;")
-        header.addWidget(titulo)
-        header.addSpacing(12)
-        header.addWidget(sub)
+        sub.setStyleSheet(f"color: {C_MUTED}; font-size: 22px;")
+        header.addWidget(titulo, alignment=Qt.AlignVCenter)
+        header.addSpacing(16)
+        header.addWidget(sub, alignment=Qt.AlignVCenter)
         header.addStretch()
         header_wrap = QWidget()
-        header_wrap.setFixedHeight(36)
+        header_wrap.setMinimumHeight(58)
         header_wrap.setLayout(header)
         self._layout_raiz.addWidget(header_wrap)
 
         # Barra de progresso geral (linha propria, altura fixa)
         prog_row = QHBoxLayout()
+        prog_row.setContentsMargins(0, 0, 0, 0)
         lbl_prog = QLabel(f"Progresso geral: {dominadas}/26 dominadas")
-        lbl_prog.setStyleSheet(f"color: {C_MUTED}; font-size: 13px;")
-        lbl_prog.setFixedWidth(220)
+        lbl_prog.setStyleSheet(f"color: {C_MUTED}; font-size: 17px;")
+        lbl_prog.setFixedWidth(320)
         barra_geral = BarraSegmentada(len(LETRAS), dominadas, altura=10)
         prog_row.addWidget(lbl_prog)
         prog_row.addSpacing(10)
         prog_row.addWidget(barra_geral, 1)
         prog_wrap = QWidget()
-        prog_wrap.setFixedHeight(28)
+        prog_wrap.setMinimumHeight(40)
         prog_wrap.setLayout(prog_row)
         self._layout_raiz.addWidget(prog_wrap)
 
@@ -845,35 +869,44 @@ class AbaPalavras(QWidget):
         # linha 1 = titulo + subtitulo + acao a direita (altura fixa)
         # linha 2 = barra de progresso geral (altura fixa)
         header = QHBoxLayout()
+        header.setContentsMargins(0, 0, 0, 0)
         titulo = QLabel("Fases de Palavras")
         titulo.setStyleSheet(
-            f"color: {C_TEXT}; font-size: 18px; font-weight: 800;"
+            f"color: {C_TEXT}; font-size: 31px; font-weight: 800;"
         )
         sub = QLabel("complete uma fase para desbloquear a proxima")
-        sub.setStyleSheet(f"color: {C_MUTED}; font-size: 13px;")
-        header.addWidget(titulo)
-        header.addSpacing(12)
-        header.addWidget(sub)
+        sub.setStyleSheet(f"color: {C_MUTED}; font-size: 22px;")
+        header.addWidget(titulo, alignment=Qt.AlignVCenter)
+        header.addSpacing(16)
+        header.addWidget(sub, alignment=Qt.AlignVCenter)
         header.addStretch()
         btn_gerenciar = QPushButton("Adicionar palavras")
+        btn_gerenciar.setFixedHeight(32)
+        btn_gerenciar.setStyleSheet(
+            f"QPushButton {{ background-color: {C_CARD}; color: {C_TEXT};"
+            f" border: 1px solid {C_BORDER}; border-radius: 8px;"
+            f" padding: 0px 16px; font-size: 13px; }}"
+            f"QPushButton:hover {{ border: 1px solid {C_ACCENT}; }}"
+        )
         btn_gerenciar.clicked.connect(self.gerenciar_solicitado.emit)
-        header.addWidget(btn_gerenciar)
+        header.addWidget(btn_gerenciar, alignment=Qt.AlignVCenter)
         header_wrap = QWidget()
-        header_wrap.setFixedHeight(36)
+        header_wrap.setMinimumHeight(58)
         header_wrap.setLayout(header)
         self._layout_raiz.addWidget(header_wrap)
 
         # Barra de progresso geral (linha propria, altura fixa)
         prog_row = QHBoxLayout()
+        prog_row.setContentsMargins(0, 0, 0, 0)
         lbl_prog = QLabel(f"Progresso das fases: {completas}/{len(FASES)}")
-        lbl_prog.setStyleSheet(f"color: {C_MUTED}; font-size: 13px;")
-        lbl_prog.setFixedWidth(220)
+        lbl_prog.setStyleSheet(f"color: {C_MUTED}; font-size: 17px;")
+        lbl_prog.setFixedWidth(320)
         barra_geral = BarraSegmentada(len(FASES), completas, altura=10)
         prog_row.addWidget(lbl_prog)
         prog_row.addSpacing(10)
         prog_row.addWidget(barra_geral, 1)
         prog_wrap = QWidget()
-        prog_wrap.setFixedHeight(28)
+        prog_wrap.setMinimumHeight(40)
         prog_wrap.setLayout(prog_row)
         self._layout_raiz.addWidget(prog_wrap)
 
@@ -923,30 +956,30 @@ class QuizCard(QFrame):
         super().__init__()
         self.tipo = tipo
         self.disponivel = disponivel
-        self.setFixedSize(300, 280)
+        self.setFixedSize(440, 400)
         cor_borda = C_ACCENT if disponivel else C_BORDER
         hover = f"QFrame:hover {{ border: 1px solid {C_ACCENT}; }}" if disponivel else ""
         self.setStyleSheet(
             f"QFrame {{ background-color: {C_PANEL};"
-            f" border: 1px solid {cor_borda}; border-radius: 14px; }}"
+            f" border: 1px solid {cor_borda}; border-radius: 18px; }}"
             + hover
         )
         if disponivel:
             self.setCursor(QCursor(Qt.PointingHandCursor))
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(22, 24, 22, 24)
-        layout.setSpacing(14)
+        layout.setContentsMargins(30, 32, 30, 32)
+        layout.setSpacing(18)
         layout.setAlignment(Qt.AlignTop)
 
         lbl_icone = QLabel(icone)
         lbl_icone.setAlignment(Qt.AlignCenter)
-        lbl_icone.setFixedSize(90, 90)
+        lbl_icone.setFixedSize(132, 132)
         # Fonte do icone menor quando e texto (ABC) do que quando e um simbolo
-        tam_icone = 30 if len(icone) > 1 else 40
+        tam_icone = 44 if len(icone) > 1 else 58
         lbl_icone.setStyleSheet(
             f"background-color: {C_CARD}; color: {C_ACCENT};"
-            f" border: 2px solid {C_ACCENT}; border-radius: 45px;"
+            f" border: 3px solid {C_ACCENT}; border-radius: 66px;"
             f" font-size: {tam_icone}px; font-weight: 800;"
         )
         layout.addWidget(lbl_icone, alignment=Qt.AlignHCenter)
@@ -954,16 +987,16 @@ class QuizCard(QFrame):
         lbl_titulo = QLabel(titulo)
         lbl_titulo.setAlignment(Qt.AlignCenter)
         lbl_titulo.setStyleSheet(
-            f"color: {C_TEXT}; font-size: 21px; font-weight: 800; border: none;"
+            f"color: {C_TEXT}; font-size: 30px; font-weight: 800; border: none;"
         )
         layout.addWidget(lbl_titulo)
 
         lbl_desc = QLabel(descricao)
         lbl_desc.setAlignment(Qt.AlignHCenter | Qt.AlignTop)
         lbl_desc.setWordWrap(True)
-        lbl_desc.setFixedHeight(56)
+        lbl_desc.setMinimumHeight(66)
         lbl_desc.setStyleSheet(
-            f"color: {C_MUTED}; font-size: 14px; border: none;"
+            f"color: {C_MUTED}; font-size: 17px; border: none;"
         )
         layout.addWidget(lbl_desc)
 
@@ -974,7 +1007,7 @@ class QuizCard(QFrame):
         info.setAlignment(Qt.AlignCenter)
         info.setStyleSheet(
             f"color: {C_ACCENT if disponivel else C_MUTED};"
-            f" font-size: 13px; font-weight: 600; border: none;"
+            f" font-size: 16px; font-weight: 600; border: none;"
         )
         layout.addWidget(info)
 
@@ -1023,45 +1056,56 @@ class AbaQuiz(QWidget):
     def _construir(self):
         # Cabecalho padronizado (mesma estrutura das outras abas)
         header = QHBoxLayout()
+        header.setContentsMargins(0, 0, 0, 0)
         titulo = QLabel("Quiz de Caligrafia")
         titulo.setStyleSheet(
-            f"color: {C_TEXT}; font-size: 18px; font-weight: 800;"
+            f"color: {C_TEXT}; font-size: 31px; font-weight: 800;"
         )
-        sub = QLabel("responda como se escreve cada item sorteado")
-        sub.setStyleSheet(f"color: {C_MUTED}; font-size: 13px;")
-        header.addWidget(titulo)
-        header.addSpacing(12)
-        header.addWidget(sub)
+        sub = QLabel("escolha um tipo e pratique com itens sorteados")
+        sub.setStyleSheet(f"color: {C_MUTED}; font-size: 22px;")
+        header.addWidget(titulo, alignment=Qt.AlignVCenter)
+        header.addSpacing(16)
+        header.addWidget(sub, alignment=Qt.AlignVCenter)
         header.addStretch()
         header_wrap = QWidget()
-        header_wrap.setFixedHeight(36)
+        header_wrap.setMinimumHeight(58)
         header_wrap.setLayout(header)
         self._layout_raiz.addWidget(header_wrap)
 
-        # Linha vazia de mesma altura para alinhar com as outras abas
-        espacador = QWidget()
-        espacador.setFixedHeight(28)
-        self._layout_raiz.addWidget(espacador)
-
-        self._layout_raiz.addStretch(1)
-
-        explicacao = QLabel(
-            "Escolha um tipo de quiz. O sistema vai sortear os itens em ordem "
-            "aleatoria e voce escreve cada um no quadro (ou envia uma foto). "
-            "Ao final, voce ve quantos acertou."
+        # Linha de instrucao (equivalente a barra de progresso das outras
+        # abas), com texto bem visivel
+        instrucao_row = QHBoxLayout()
+        instrucao_row.setContentsMargins(0, 0, 0, 0)
+        lbl_instrucao = QLabel(
+            "Os itens sao sorteados aleatoriamente a cada quiz"
         )
-        explicacao.setAlignment(Qt.AlignCenter)
-        explicacao.setWordWrap(True)
-        explicacao.setMaximumWidth(720)
-        explicacao.setStyleSheet(
-            f"color: {C_TEXT}; font-size: 18px; line-height: 1.6;"
-        )
-        self._layout_raiz.addWidget(explicacao, alignment=Qt.AlignHCenter)
+        lbl_instrucao.setStyleSheet(f"color: {C_MUTED}; font-size: 17px;")
+        instrucao_row.addWidget(lbl_instrucao)
+        instrucao_row.addStretch()
+        instrucao_wrap = QWidget()
+        instrucao_wrap.setMinimumHeight(40)
+        instrucao_wrap.setLayout(instrucao_row)
+        self._layout_raiz.addWidget(instrucao_wrap)
 
-        self._layout_raiz.addSpacing(24)
+        self._layout_raiz.addSpacing(16)
 
+        # Conteudo com rolagem: garante que nada fica cortado, mesmo em
+        # telas menores
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setStyleSheet("border: none; background: transparent;")
+        container = QWidget()
+        container.setStyleSheet("background: transparent; border: none;")
+        conteudo = QVBoxLayout(container)
+        conteudo.setContentsMargins(0, 0, 8, 0)
+
+        # Stretch antes E depois dos cards -> centralizados verticalmente
+        # no espaco disponivel (nao mais colados ao topo)
+        conteudo.addStretch(1)
+
+        # Cards de escolha, centralizados e grandes
         cards_wrap = QHBoxLayout()
-        cards_wrap.setSpacing(28)
+        cards_wrap.setSpacing(32)
         cards_wrap.addStretch()
 
         card_letras = QuizCard(
@@ -1084,8 +1128,582 @@ class AbaQuiz(QWidget):
         cards_wrap.addWidget(card_palavras)
 
         cards_wrap.addStretch()
-        self._layout_raiz.addLayout(cards_wrap)
-        self._layout_raiz.addStretch(2)
+        conteudo.addLayout(cards_wrap)
+        conteudo.addStretch(1)
+
+        scroll.setWidget(container)
+        self._layout_raiz.addWidget(scroll, 1)
+
+    def reconstruir(self):
+        self._limpar()
+        self._construir()
+
+
+class DicionarioWorker(QThread):
+    """Busca a definicao em segundo plano para nao travar a interface."""
+    encontrado = pyqtSignal(object)   # dict ou None
+    erro = pyqtSignal(str)
+
+    def __init__(self, palavra):
+        super().__init__()
+        self.palavra = palavra
+
+    def run(self):
+        try:
+            import dicionario_service
+            resultado = dicionario_service.buscar(self.palavra)
+            self.encontrado.emit(resultado)
+        except Exception as e:
+            self.erro.emit(str(e))
+
+
+class AbaDicionario(QWidget):
+    """Aba de dicionario/glossario: a pessoa busca uma palavra, ve a
+    definicao e os exemplos, e pode treina-la (adiciona em Minhas
+    Palavras). Usa a API publica do Dicionario Aberto."""
+    treinar_palavra = pyqtSignal(str)   # emite ao clicar em Treinar
+
+    def __init__(self, uid, estado):
+        super().__init__()
+        self.uid = uid
+        self.estado = estado
+        self.worker = None
+        self.palavra_atual = None
+        self.setup_ui()
+
+    def setup_ui(self):
+        raiz = QVBoxLayout(self)
+        raiz.setContentsMargins(20, 20, 20, 20)
+        raiz.setSpacing(14)
+
+        # Cabecalho padronizado (mesma estrutura das outras abas)
+        header = QHBoxLayout()
+        header.setContentsMargins(0, 0, 0, 0)
+        titulo = QLabel("Dicionario")
+        titulo.setStyleSheet(
+            f"color: {C_TEXT}; font-size: 31px; font-weight: 800;"
+        )
+        sub = QLabel("busque uma palavra e adicione ao seu treino")
+        sub.setStyleSheet(f"color: {C_MUTED}; font-size: 22px;")
+        header.addWidget(titulo, alignment=Qt.AlignVCenter)
+        header.addSpacing(16)
+        header.addWidget(sub, alignment=Qt.AlignVCenter)
+        header.addStretch()
+        header_wrap = QWidget()
+        header_wrap.setMinimumHeight(58)
+        header_wrap.setLayout(header)
+        raiz.addWidget(header_wrap)
+
+        # Barra de busca
+        busca_row = QHBoxLayout()
+        self.input_busca = QLineEdit()
+        self.input_busca.setPlaceholderText(
+            "Pesquise uma palavra para ver seu significado..."
+        )
+        self.input_busca.setMinimumHeight(44)
+        self.input_busca.setStyleSheet(
+            f"QLineEdit {{ background-color: {C_CARD}; color: {C_TEXT};"
+            f" border: 1px solid {C_BORDER}; border-radius: 10px;"
+            f" padding: 10px 14px; font-size: 15px; }}"
+            f"QLineEdit:focus {{ border: 1px solid {C_ACCENT}; }}"
+        )
+        self.input_busca.returnPressed.connect(self._buscar)
+        busca_row.addWidget(self.input_busca, 1)
+
+        self.btn_buscar = QPushButton("Buscar")
+        self.btn_buscar.setObjectName("primary")
+        self.btn_buscar.setMinimumHeight(44)
+        self.btn_buscar.clicked.connect(self._buscar)
+        busca_row.addWidget(self.btn_buscar)
+        raiz.addLayout(busca_row)
+
+        # Area de resultado (card)
+        self.card_resultado = QFrame()
+        self.card_resultado.setStyleSheet(
+            f"QFrame {{ background-color: {C_PANEL};"
+            f" border: 1px solid {C_BORDER}; border-radius: 12px; }}"
+        )
+        card_layout = QVBoxLayout(self.card_resultado)
+        card_layout.setContentsMargins(24, 22, 24, 22)
+        card_layout.setSpacing(14)
+
+        self.lbl_palavra = QLabel("")
+        self.lbl_palavra.setStyleSheet(
+            f"color: {C_TEXT}; font-size: 30px; font-weight: 800;"
+            f" border: none; font-family: 'Cambria', 'Georgia', serif;"
+        )
+        # Comeca escondido: sem isso, o espaco reservado para esse texto
+        # (mesmo vazio) empurra a mensagem abaixo para mais longe do topo
+        self.lbl_palavra.setVisible(False)
+        card_layout.addWidget(self.lbl_palavra)
+
+        self.lbl_status = QLabel(
+            "Pesquise uma palavra para ver seu significado..."
+        )
+        self.lbl_status.setWordWrap(True)
+        self.lbl_status.setStyleSheet(
+            f"color: {C_MUTED}; font-size: 19px; font-weight: 500; border: none;"
+        )
+        card_layout.addWidget(self.lbl_status)
+
+        # Scroll para definicao longa
+        self.scroll_def = QScrollArea()
+        self.scroll_def.setWidgetResizable(True)
+        self.scroll_def.setStyleSheet("border: none; background: transparent;")
+        self.def_container = QWidget()
+        self.def_container.setStyleSheet("background: transparent; border: none;")
+        self.def_layout = QVBoxLayout(self.def_container)
+        self.def_layout.setContentsMargins(0, 0, 0, 0)
+        self.def_layout.setSpacing(12)
+        self.def_layout.setAlignment(Qt.AlignTop)
+        self.scroll_def.setWidget(self.def_container)
+        card_layout.addWidget(self.scroll_def, 1)
+
+        # Botao adicionar (so aparece quando ha uma palavra valida)
+        self.btn_treinar = QPushButton()
+        self.btn_treinar.setObjectName("primary")
+        self.btn_treinar.setMinimumHeight(44)
+        self.btn_treinar.setVisible(False)
+        self.btn_treinar.clicked.connect(self._treinar)
+        card_layout.addWidget(self.btn_treinar)
+
+        raiz.addWidget(self.card_resultado, 1)
+
+    # ── Busca ───────────────────────────────────────────────────────
+
+    def _buscar(self):
+        palavra = (self.input_busca.text() or "").strip()
+        if len(palavra) < 2:
+            return
+        # Se ja ha uma busca em andamento, ignora (evita threads sobrepostas)
+        if self.worker is not None and self.worker.isRunning():
+            return
+        self.btn_buscar.setEnabled(False)
+        self.btn_treinar.setVisible(False)
+        self.lbl_palavra.setText("")
+        self.lbl_palavra.setVisible(False)
+        self._limpar_definicao()
+        self.lbl_status.setText("Buscando...")
+        self.lbl_status.setVisible(True)
+
+        self.worker = DicionarioWorker(palavra)
+        self.worker.encontrado.connect(self._on_encontrado)
+        self.worker.erro.connect(self._on_erro)
+        self.worker.finished.connect(self._on_worker_fim)
+        self.worker.start()
+
+    def _on_worker_fim(self):
+        # Libera a referencia quando a thread termina de fato
+        self.worker = None
+
+    def _limpar_definicao(self):
+        while self.def_layout.count():
+            item = self.def_layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+
+    def _on_encontrado(self, resultado):
+        try:
+            self.btn_buscar.setEnabled(True)
+        except RuntimeError:
+            return   # widget ja foi destruido
+        if resultado is None:
+            self.lbl_palavra.setText("")
+            self.lbl_palavra.setVisible(False)
+            self.lbl_status.setText(
+                "Palavra nao encontrada no dicionario, ou sem conexao com a "
+                "internet. Verifique a grafia e tente novamente."
+            )
+            self.lbl_status.setVisible(True)
+            self.btn_treinar.setVisible(False)
+            return
+
+        self.palavra_atual = resultado["palavra"]
+        self.lbl_palavra.setText(resultado["palavra"])
+        self.lbl_palavra.setVisible(True)
+        self.lbl_status.setVisible(False)
+        self._limpar_definicao()
+
+        # Classe gramatical (quando a fonte fornece, ex: "substantivo feminino")
+        classe = resultado.get("classe", "")
+        if classe:
+            lbl_classe = QLabel(classe)
+            lbl_classe.setStyleSheet(
+                f"color: {C_ACCENT}; font-size: 15px; font-weight: 700;"
+                f" font-style: italic; border: none;"
+            )
+            self.def_layout.addWidget(lbl_classe)
+
+        # Separa a definicao em: significados (acepcoes) e exemplos.
+        # No Dicio, cada acepcao vem numa linha; a parte apos ':' costuma
+        # ser um exemplo de uso.
+        significados, exemplos = self._separar(resultado["definicao"])
+        # Junta com os exemplos explicitos da fonte (Dicionario Aberto)
+        exemplos = exemplos + list(resultado.get("exemplos", []))
+
+        # ── BLOCO 1: SIGNIFICADO ──
+        self.def_layout.addWidget(self._bloco_titulo("SIGNIFICADO"))
+        card_sig = self._bloco_card()
+        lay_sig = card_sig.layout()
+        if significados:
+            for i, s in enumerate(significados, 1):
+                lbl = QLabel(f"{i}.  {s}")
+                lbl.setWordWrap(True)
+                lbl.setStyleSheet(
+                    f"color: {C_TEXT}; font-size: 15px; border: none;"
+                )
+                lay_sig.addWidget(lbl)
+        else:
+            lbl = QLabel(resultado["definicao"])
+            lbl.setWordWrap(True)
+            lbl.setStyleSheet(
+                f"color: {C_TEXT}; font-size: 15px; border: none;"
+            )
+            lay_sig.addWidget(lbl)
+        self.def_layout.addWidget(card_sig)
+
+        # ── BLOCO 2: EXEMPLOS DE USO ── (so se houver)
+        if exemplos:
+            self.def_layout.addWidget(self._bloco_titulo("EXEMPLOS DE USO"))
+            card_ex = self._bloco_card()
+            lay_ex = card_ex.layout()
+            for ex in exemplos:
+                lbl = QLabel(f"\u201c{ex}\u201d")
+                lbl.setWordWrap(True)
+                lbl.setStyleSheet(
+                    f"color: {C_MUTED}; font-size: 14px; border: none;"
+                    f" font-style: italic;"
+                )
+                lay_ex.addWidget(lbl)
+            self.def_layout.addWidget(card_ex)
+
+        # Rodape com a fonte
+        fonte = resultado.get("fonte", "")
+        if fonte:
+            lbl_fonte = QLabel(f"Fonte: {fonte}")
+            lbl_fonte.setStyleSheet(
+                f"color: {C_MUTED}; font-size: 11px; border: none;"
+            )
+            self.def_layout.addWidget(lbl_fonte)
+
+        # Botao de adicionar (so para palavra unica, sem espacos)
+        if self.palavra_atual and self.palavra_atual.isalpha():
+            self.btn_treinar.setVisible(True)
+            ja_tem = self.palavra_atual in self.estado.get(
+                "palavras_customizadas", []
+            )
+            if ja_tem:
+                self.btn_treinar.setText("Ja esta em Minhas Palavras")
+                self.btn_treinar.setEnabled(False)
+            else:
+                # 'Minhas Palavras' em negrito via HTML
+                self.btn_treinar.setText("Adicionar em Minhas Palavras")
+                self.btn_treinar.setEnabled(True)
+        else:
+            self.btn_treinar.setVisible(False)
+
+    def _bloco_titulo(self, texto):
+        lbl = QLabel(texto)
+        lbl.setStyleSheet(
+            f"color: {C_MUTED}; font-size: 12px; font-weight: 700;"
+            f" letter-spacing: 1.4px; border: none;"
+        )
+        return lbl
+
+    def _bloco_card(self):
+        card = QFrame()
+        card.setStyleSheet(
+            f"QFrame {{ background-color: {C_CARD};"
+            f" border: 1px solid {C_BORDER}; border-radius: 10px; }}"
+        )
+        lay = QVBoxLayout(card)
+        lay.setContentsMargins(16, 14, 16, 14)
+        lay.setSpacing(10)
+        return card
+
+    def _separar(self, definicao):
+        """Divide o texto da definicao em (significados, exemplos).
+        Cada acepcao costuma vir em uma linha; a parte apos ':' geralmente
+        e um exemplo de uso, entao a separamos."""
+        significados, exemplos = [], []
+        linhas = [ln.strip() for ln in definicao.split("\n") if ln.strip()]
+        # Se veio tudo numa linha so, tenta quebrar por ponto final
+        if len(linhas) == 1:
+            linhas = [p.strip() for p in re.split(r"(?<=\.)\s+", linhas[0]) if p.strip()]
+        for ln in linhas:
+            if ":" in ln:
+                antes, depois = ln.split(":", 1)
+                antes = antes.strip()
+                depois = depois.strip().rstrip(".")
+                if antes:
+                    significados.append(antes + ".")
+                if depois:
+                    exemplos.append(depois)
+            else:
+                significados.append(ln)
+        return significados, exemplos
+
+    def _on_erro(self, _mensagem):
+        self.btn_buscar.setEnabled(True)
+        self.lbl_status.setText(
+            "Nao foi possivel buscar agora. Verifique sua conexao e tente de novo."
+        )
+        self.lbl_status.setVisible(True)
+
+    def _treinar(self):
+        if not self.palavra_atual:
+            return
+        ok = prog.adicionar_palavra_customizada(
+            self.uid, self.estado, self.palavra_atual
+        )
+        if ok:
+            self.btn_treinar.setText("Adicionada a Minhas Palavras!")
+            self.btn_treinar.setEnabled(False)
+            self.treinar_palavra.emit(self.palavra_atual)
+
+    def reconstruir(self):
+        # Atualiza o estado do botao treinar caso a lista tenha mudado
+        if self.palavra_atual:
+            ja_tem = self.palavra_atual in self.estado.get(
+                "palavras_customizadas", []
+            )
+            if ja_tem and self.btn_treinar.isVisible():
+                self.btn_treinar.setText("Ja esta em Minhas Palavras")
+                self.btn_treinar.setEnabled(False)
+
+
+class ConquistaCard(QFrame):
+    """Card de uma conquista/medalha (desbloqueada ou bloqueada)."""
+
+    def __init__(self, conquista):
+        super().__init__()
+        desbloqueada = conquista["desbloqueada"]
+        self.setFixedSize(240, 92)
+        cor_borda = C_GOOD if desbloqueada else C_BORDER
+        self.setStyleSheet(
+            f"QFrame {{ background-color: {C_PANEL};"
+            f" border: 1px solid {cor_borda}; border-radius: 12px; }}"
+        )
+        lay = QHBoxLayout(self)
+        lay.setContentsMargins(14, 12, 14, 12)
+        lay.setSpacing(12)
+
+        # Medalha (circulo)
+        medalha = QLabel("*" if desbloqueada else "-")
+        medalha.setAlignment(Qt.AlignCenter)
+        medalha.setFixedSize(48, 48)
+        cor_med = C_GOOD if desbloqueada else C_CARD
+        cor_txt = "#ffffff" if desbloqueada else C_MUTED
+        medalha.setStyleSheet(
+            f"background-color: {cor_med}; color: {cor_txt};"
+            f" border-radius: 24px; font-size: 22px; font-weight: 800;"
+        )
+        lay.addWidget(medalha)
+
+        texto = QVBoxLayout()
+        texto.setSpacing(2)
+        titulo = QLabel(conquista["titulo"])
+        cor_titulo = C_TEXT if desbloqueada else C_MUTED
+        titulo.setStyleSheet(
+            f"color: {cor_titulo}; font-size: 14px; font-weight: 700;"
+            f" border: none; background: transparent;"
+        )
+        texto.addWidget(titulo)
+        desc = QLabel(conquista["descricao"])
+        desc.setWordWrap(True)
+        desc.setStyleSheet(
+            f"color: {C_MUTED}; font-size: 11px; border: none;"
+            f" background: transparent;"
+        )
+        texto.addWidget(desc)
+        lay.addLayout(texto, 1)
+
+
+class AbaProgresso(QWidget):
+    """Painel de progresso geral: anel de desempenho, estatisticas,
+    mapa de calor das letras e conquistas."""
+
+    def __init__(self, estado):
+        super().__init__()
+        self.estado = estado
+        self._raiz = QVBoxLayout(self)
+        self._raiz.setContentsMargins(20, 20, 20, 20)
+        self._raiz.setSpacing(14)
+        self._construir()
+
+    def _limpar(self):
+        while self._raiz.count():
+            item = self._raiz.takeAt(0)
+            w = item.widget()
+            if w is not None:
+                w.setParent(None)
+                w.deleteLater()
+            else:
+                sub = item.layout()
+                if sub is not None:
+                    self._limpar_layout(sub)
+
+    def _limpar_layout(self, lay):
+        while lay.count():
+            item = lay.takeAt(0)
+            w = item.widget()
+            if w is not None:
+                w.setParent(None)
+                w.deleteLater()
+            else:
+                sub = item.layout()
+                if sub is not None:
+                    self._limpar_layout(sub)
+
+    def _construir(self):
+        from anel_progresso import AnelProgresso
+        r = prog.resumo(self.estado)
+
+        # Cabecalho padronizado
+        header = QHBoxLayout()
+        header.setContentsMargins(0, 0, 0, 0)
+        titulo = QLabel("Seu Progresso")
+        titulo.setStyleSheet(
+            f"color: {C_TEXT}; font-size: 31px; font-weight: 800;"
+        )
+        sub = QLabel("acompanhe sua evolucao na plataforma")
+        sub.setStyleSheet(f"color: {C_MUTED}; font-size: 22px;")
+        header.addWidget(titulo, alignment=Qt.AlignVCenter)
+        header.addSpacing(16)
+        header.addWidget(sub, alignment=Qt.AlignVCenter)
+        header.addStretch()
+        header_wrap = QWidget()
+        header_wrap.setMinimumHeight(58)
+        header_wrap.setLayout(header)
+        self._raiz.addWidget(header_wrap)
+
+        # Conteudo rolavel (pode ficar longo)
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setStyleSheet("border: none; background: transparent;")
+        container = QWidget()
+        container.setStyleSheet("background: transparent; border: none;")
+        conteudo = QVBoxLayout(container)
+        conteudo.setContentsMargins(0, 0, 8, 0)
+        conteudo.setSpacing(18)
+
+        # ── LINHA 1: anel + estatisticas ──
+        topo = QHBoxLayout()
+        topo.setSpacing(24)
+
+        anel = AnelProgresso(r["percentual"], tamanho=220)
+        topo.addWidget(anel, alignment=Qt.AlignTop)
+
+        # Grade de estatisticas
+        stats_grid = QGridLayout()
+        stats_grid.setSpacing(12)
+        cartoes = [
+            ("Letras dominadas", f"{r['letras_dominadas']}/{r['letras_total']}", C_GOOD),
+            ("Fases completas", f"{r['fases_completas']}/{r['fases_total']}", C_ACCENT),
+            ("Minhas palavras", str(r["palavras"]), C_ACCENT),
+            ("Exercicios feitos", str(r["exercicios_feitos"]), C_TEXT),
+            ("Sequencia atual", f"{r['streak_dias']} dia(s)", C_OK),
+            ("Melhor sequencia", f"{r['streak_recorde']} dia(s)", C_OK),
+        ]
+        for i, (rot, val, cor) in enumerate(cartoes):
+            stats_grid.addWidget(self._stat_card(rot, val, cor), i // 3, i % 3)
+        topo.addLayout(stats_grid, 1)
+        conteudo.addLayout(topo)
+
+        # ── LINHA 2: mapa de calor das letras ──
+        conteudo.addWidget(self._titulo_secao("DOMINIO DO ALFABETO"))
+        legenda = QLabel(
+            "Cada quadrado mostra o nivel de dominio da letra "
+            "(cinza = nao praticada, verde = dominada)."
+        )
+        legenda.setStyleSheet(f"color: {C_MUTED}; font-size: 12px; border: none;")
+        conteudo.addWidget(legenda)
+        conteudo.addWidget(self._mapa_calor())
+
+        # ── LINHA 3: conquistas ──
+        conqs = prog.conquistas_detalhadas(self.estado)
+        feitas = sum(1 for c in conqs if c["desbloqueada"])
+        conteudo.addWidget(
+            self._titulo_secao(f"CONQUISTAS  ({feitas}/{len(conqs)})")
+        )
+        grid_conq = QGridLayout()
+        grid_conq.setSpacing(12)
+        for i, c in enumerate(conqs):
+            grid_conq.addWidget(ConquistaCard(c), i // 3, i % 3)
+        wrap_conq = QWidget()
+        wrap_conq.setLayout(grid_conq)
+        conteudo.addWidget(wrap_conq)
+
+        conteudo.addStretch(1)
+        scroll.setWidget(container)
+        self._raiz.addWidget(scroll, 1)
+
+    def _stat_card(self, rotulo, valor, cor):
+        card = QFrame()
+        card.setStyleSheet(
+            f"QFrame {{ background-color: {C_PANEL};"
+            f" border: 1px solid {C_BORDER}; border-radius: 12px; }}"
+        )
+        card.setFixedHeight(92)
+        lay = QVBoxLayout(card)
+        lay.setContentsMargins(16, 14, 16, 14)
+        lay.setSpacing(4)
+        lbl_val = QLabel(valor)
+        lbl_val.setStyleSheet(
+            f"color: {cor}; font-size: 26px; font-weight: 800;"
+            f" border: none; background: transparent;"
+        )
+        lay.addWidget(lbl_val)
+        lbl_rot = QLabel(rotulo)
+        lbl_rot.setStyleSheet(
+            f"color: {C_MUTED}; font-size: 12px; border: none;"
+            f" background: transparent;"
+        )
+        lay.addWidget(lbl_rot)
+        return card
+
+    def _titulo_secao(self, texto):
+        lbl = QLabel(texto)
+        lbl.setStyleSheet(
+            f"color: {C_MUTED}; font-size: 12px; font-weight: 700;"
+            f" letter-spacing: 1.4px; border: none;"
+        )
+        return lbl
+
+    def _mapa_calor(self):
+        letras_estado = self.estado.get("letras", {})
+        wrap = QWidget()
+        grid = QGridLayout(wrap)
+        grid.setSpacing(6)
+        grid.setContentsMargins(0, 0, 0, 0)
+        cols = 13
+        for i, letra in enumerate(LETRAS):
+            nivel = letras_estado.get(letra, 0)
+            cor = self._cor_nivel(nivel)
+            quad = QLabel(letra)
+            quad.setAlignment(Qt.AlignCenter)
+            quad.setFixedSize(48, 48)
+            cor_txt = "#ffffff" if nivel >= 1 else C_MUTED
+            quad.setStyleSheet(
+                f"background-color: {cor}; color: {cor_txt};"
+                f" border-radius: 8px; font-size: 18px; font-weight: 700;"
+            )
+            quad.setToolTip(
+                f"{letra}: dominada" if nivel >= 5
+                else f"{letra}: nivel {nivel} de 5"
+            )
+            grid.addWidget(quad, i // cols, i % cols)
+        return wrap
+
+    def _cor_nivel(self, n):
+        # Gradiente discreto: cinza -> ambar -> azul -> verde
+        if n >= 5:
+            return C_GOOD
+        elif n >= 3:
+            return C_ACCENT
+        elif n >= 1:
+            return C_OK
+        return C_CARD
 
     def reconstruir(self):
         self._limpar()
@@ -1105,6 +1723,7 @@ class PraticarWidget(QWidget):
         root.setSpacing(12)
 
         header = QHBoxLayout()
+        header.setContentsMargins(0, 0, 0, 0)
         btn_voltar = QPushButton("Voltar")
         btn_voltar.setObjectName("ghost")
         btn_voltar.setFixedWidth(90)
@@ -1134,12 +1753,23 @@ class PraticarWidget(QWidget):
         self.aba_palavras.gerenciar_solicitado.connect(self.abrir_gerenciador)
         self.aba_quiz = AbaQuiz(self.estado)
         self.aba_quiz.quiz_selecionado.connect(self.iniciar_quiz)
+        self.aba_dicionario = AbaDicionario(self.uid, self.estado)
+        self.aba_dicionario.treinar_palavra.connect(self._palavra_do_dicionario)
+        self.aba_progresso = AbaProgresso(self.estado)
         self.menu.addTab(self.aba_letras, "Letras")
         self.menu.addTab(self.aba_palavras, "Palavras")
         self.menu.addTab(self.aba_quiz, "Quiz")
+        self.menu.addTab(self.aba_dicionario, "Dicionario")
+        self.menu.addTab(self.aba_progresso, "Progresso")
+        self.menu.currentChanged.connect(self._aba_mudou)
 
         self.stack.addWidget(self.menu)
         self.painel_exercicio = None
+
+    def _aba_mudou(self, indice):
+        # Ao entrar na aba Progresso, reconstroi para refletir dados atuais
+        if self.menu.widget(indice) is self.aba_progresso:
+            self.aba_progresso.reconstruir()
 
     def _voltar_ao_inicio(self):
         if self.stack.currentWidget() != self.menu:
@@ -1151,6 +1781,8 @@ class PraticarWidget(QWidget):
         self.aba_letras.reconstruir()
         self.aba_palavras.reconstruir()
         self.aba_quiz.reconstruir()
+        self.aba_dicionario.reconstruir()
+        self.aba_progresso.reconstruir()
         self.stack.setCurrentWidget(self.menu)
         if self.painel_exercicio is not None:
             self.stack.removeWidget(self.painel_exercicio)
@@ -1170,7 +1802,22 @@ class PraticarWidget(QWidget):
         self.stack.setCurrentWidget(self.painel_exercicio)
 
     def _acertou_letra(self, letra):
-        prog.registrar_acerto_letra(self.uid, self.estado, letra)
+        novas = prog.registrar_acerto_letra(self.uid, self.estado, letra)
+        self._avisar_conquistas(novas)
+
+    def _avisar_conquistas(self, novas):
+        """Mostra um aviso quando o usuario desbloqueia conquistas."""
+        if not novas:
+            return
+        nomes = {cid: titulo for cid, titulo, _d, _t in prog.CONQUISTAS}
+        titulos = [nomes.get(cid, cid) for cid in novas]
+        if len(titulos) == 1:
+            texto = f"Voce desbloqueou a conquista: {titulos[0]}!"
+        else:
+            texto = "Voce desbloqueou novas conquistas:\n\n" + "\n".join(
+                f"- {t}" for t in titulos
+            )
+        QMessageBox.information(self, "Nova conquista!", texto)
 
     def iniciar_fase(self, indice):
         fase = FASES[indice]
@@ -1232,7 +1879,14 @@ class PraticarWidget(QWidget):
         self.stack.setCurrentWidget(self.painel_exercicio)
 
     def _concluiu_fase(self, indice):
-        prog.registrar_fase_completa(self.uid, self.estado, indice + 1)
+        novas = prog.registrar_fase_completa(self.uid, self.estado, indice + 1)
+        self._avisar_conquistas(novas)
+
+    def _palavra_do_dicionario(self, _palavra):
+        """Quando o dicionario adiciona uma palavra, atualiza as abas que
+        mostram a lista de palavras customizadas."""
+        self.aba_palavras.reconstruir()
+        self.aba_quiz.reconstruir()
 
     def abrir_gerenciador(self):
         dlg = GerenciarPalavrasDialog(self.uid, self.estado, parent=self)

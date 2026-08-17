@@ -1,16 +1,43 @@
-venv/
-__pycache__/
-*.pyc
-*.pth
-test_images/
-reference_letters/
-data/
-modelo_caligrafia.pth
+# ─── SEGREDOS (nunca commitar!) ─────────────────────────────────────
 google_credentials.json
-progresso.json
-firebase_credentials.json
-sessao.json
+credentials.json
+*service-account*.json
+*serviceaccount*.json
+.env
+.env.*
+
+# ─── Ambiente Python ────────────────────────────────────────────────
+venv/
+.venv/
+env/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# ─── Modelos e dados de treino (pesados) ────────────────────────────
+*.pth
+*.pt
+data/
+datasets/
+
+# ─── PyInstaller / builds (pesados) ─────────────────────────────────
 build/
 dist/
 *.spec
-*.pdf
+
+# ─── Site web (se estiver dentro deste repo) ────────────────────────
+node_modules/
+calligraphos-web/node_modules/
+calligraphos-web/dist/
+.vite/
+
+# ─── Sistema operacional / editor ───────────────────────────────────
+.DS_Store
+*.swp
+*.swo
+.vscode/
+
+# ─── Temporarios ────────────────────────────────────────────────────
+*.log
+desenho_*.png

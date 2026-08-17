@@ -2,6 +2,12 @@
 touchscreen) sobre um fundo branco com traco preto - o formato ideal
 para o OCR e para a avaliacao de caligrafia.
 
+Suporta uma "letra-guia" transparente: quando ha um alvo especifico
+(letra ou palavra do exercicio), o contorno aparece bem claro atras do
+traco, para a pessoa desenhar por cima (tracing). A guia e PURAMENTE
+visual - fica numa camada separada da tinta e NUNCA entra na imagem
+salva para analise, para nao interferir no reconhecimento.
+
 O desenho pode ser salvo como PNG temporario, alimentando exatamente o
 mesmo pipeline de uma imagem carregada de arquivo.
 
@@ -15,14 +21,25 @@ from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QSizePolicy,
     QFrame
 )
-from PyQt5.QtGui import QPainter, QPen, QImage, QColor
+from PyQt5.QtGui import QPainter, QPen, QImage, QColor, QFont, QFontMetrics
 from PyQt5.QtCore import Qt, QPoint, pyqtSignal
 
 from ui_theme import C_TEXT, C_MUTED, C_BORDER, C_ACCENT, C_CARD, C_PANEL
 
+COR_GUIA = QColor(0, 0, 0, 45)   # preto bem transparente = efeito "letra fantasma"
+
 
 class AreaDesenho(QWidget):
-    """A superficie branca onde o traco preto e desenhado."""
+    """A superficie branca onde o traco preto e desenhado.
+
+    Estrutura em camadas (de baixo para cima, desenhadas no paintEvent):
+    1. fundo branco (papel)
+    2. letra-guia cinza claro (opcional, so exibicao)
+    3. tinta da pessoa (self.imagem: transparente, so opaco onde ha traco)
+
+    Apenas as camadas 1 e 3 vao para o PNG salvo - a guia nunca e
+    exportada, entao nao interfere no OCR nem na avaliacao.
+    """
     desenhou = pyqtSignal()   # emitido no primeiro traco (habilita analisar)
 
     ESPESSURA_CANETA = 8
@@ -38,13 +55,14 @@ class AreaDesenho(QWidget):
         self.ultimo_ponto = QPoint()
         self.modo_borracha = False
         self.tem_conteudo = False
+        self.guia_texto = ""
         self._garantir_imagem()
 
     def _garantir_imagem(self):
-        """Cria a imagem interna (fundo branco) do tamanho do widget."""
+        """Cria a camada de tinta (transparente) do tamanho do widget."""
         if self.imagem is None or self.imagem.size() != self.size():
-            nova = QImage(self.size(), QImage.Format_RGB888)
-            nova.fill(QColor("white"))
+            nova = QImage(self.size(), QImage.Format_ARGB32_Premultiplied)
+            nova.fill(Qt.transparent)
             if self.imagem is not None:
                 # Preserva o desenho existente ao redimensionar
                 painter = QPainter(nova)
@@ -58,8 +76,44 @@ class AreaDesenho(QWidget):
 
     def paintEvent(self, event):
         painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+        # 1. fundo branco (papel)
+        painter.fillRect(self.rect(), QColor("white"))
+        # 2. letra-guia (se houver). O tamanho da fonte e calculado AQUI,
+        # a cada desenho, usando as dimensoes REAIS e atuais do widget -
+        # nao em cache no momento de definir_guia(), que pode ser chamado
+        # antes do widget ter seu tamanho final na tela (fazendo a guia
+        # nao aparecer ou aparecer minuscula).
+        if self.guia_texto:
+            fonte = self._fonte_para_guia()
+            if fonte:
+                painter.setPen(COR_GUIA)
+                painter.setFont(fonte)
+                painter.drawText(self.rect(), Qt.AlignCenter, self.guia_texto)
+        # 3. traco da pessoa (camada transparente, so a tinta e opaca)
         painter.drawImage(0, 0, self.imagem)
         painter.end()
+
+    def _fonte_para_guia(self):
+        """Calcula o maior tamanho de fonte que cabe confortavelmente na
+        area de desenho, usando as dimensoes atuais (nao cacheadas)."""
+        largura = self.width()
+        altura = self.height()
+        if largura <= 10 or altura <= 10 or not self.guia_texto:
+            return None
+        largura_max = int(largura * 0.82)
+        altura_max = int(altura * 0.82)
+        tamanho = 10
+        fonte = QFont("Georgia", tamanho, QFont.Light)
+        while tamanho < 500:
+            fonte.setPointSize(tamanho + 4)
+            metrics = QFontMetrics(fonte)
+            rect = metrics.boundingRect(self.guia_texto)
+            if rect.width() > largura_max or rect.height() > altura_max:
+                break
+            tamanho += 4
+        fonte.setPointSize(max(10, tamanho))
+        return fonte
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
@@ -79,13 +133,21 @@ class AreaDesenho(QWidget):
     def _desenhar_ate(self, ponto):
         self._garantir_imagem()
         painter = QPainter(self.imagem)
+        painter.setRenderHint(QPainter.Antialiasing)
         if self.modo_borracha:
-            cor = QColor("white")
-            espessura = self.ESPESSURA_BORRACHA
+            # Apaga de volta para transparente (nao pinta de branco por
+            # cima, senao criaria uma mancha branca sobre a letra-guia)
+            painter.setCompositionMode(QPainter.CompositionMode_Clear)
+            pen = QPen(
+                QColor(0, 0, 0, 255), self.ESPESSURA_BORRACHA,
+                Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin
+            )
         else:
-            cor = QColor("black")
-            espessura = self.ESPESSURA_CANETA
-        pen = QPen(cor, espessura, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin)
+            painter.setCompositionMode(QPainter.CompositionMode_SourceOver)
+            pen = QPen(
+                QColor("black"), self.ESPESSURA_CANETA,
+                Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin
+            )
         painter.setPen(pen)
         painter.drawLine(self.ultimo_ponto, ponto)
         painter.end()
@@ -96,7 +158,7 @@ class AreaDesenho(QWidget):
         self.update()
 
     def limpar(self):
-        self.imagem.fill(QColor("white"))
+        self.imagem.fill(Qt.transparent)
         self.tem_conteudo = False
         self.update()
 
@@ -107,11 +169,30 @@ class AreaDesenho(QWidget):
     def esta_vazio(self):
         return not self.tem_conteudo
 
+    def definir_guia(self, texto):
+        """Define a letra ou palavra-guia exibida atras do traco, para
+        a pessoa desenhar por cima (tracing). O tamanho da fonte e
+        calculado dinamicamente no proximo paintEvent, entao funciona
+        mesmo se chamado antes do widget ter seu tamanho final."""
+        self.guia_texto = (texto or "").strip()
+        self.update()
+
+    def limpar_guia(self):
+        self.guia_texto = ""
+        self.update()
+
     def salvar_png(self):
-        """Salva o desenho em um PNG temporario e devolve o caminho."""
+        """Salva SOMENTE o traco (fundo branco + tinta) em um PNG
+        temporario - a letra-guia nunca entra aqui, entao nao interfere
+        na transcricao nem na avaliacao. Devolve o caminho do arquivo."""
+        composta = QImage(self.imagem.size(), QImage.Format_RGB888)
+        composta.fill(QColor("white"))
+        painter = QPainter(composta)
+        painter.drawImage(0, 0, self.imagem)
+        painter.end()
         fd, caminho = tempfile.mkstemp(suffix=".png", prefix="desenho_")
         os.close(fd)
-        self.imagem.save(caminho, "PNG")
+        composta.save(caminho, "PNG")
         return caminho
 
 
@@ -205,6 +286,12 @@ class CanvasDesenho(QWidget):
 
     def limpar(self):
         self.area.limpar()
+
+    def definir_guia(self, texto):
+        self.area.definir_guia(texto)
+
+    def limpar_guia(self):
+        self.area.limpar_guia()
 
     def salvar_png(self):
         return self.area.salvar_png()

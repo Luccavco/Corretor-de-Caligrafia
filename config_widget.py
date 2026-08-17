@@ -3,7 +3,7 @@ e sair da conta. Requer confirmacao para acoes destrutivas."""
 
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
-    QPushButton, QFrame, QMessageBox, QSizePolicy
+    QPushButton, QFrame, QMessageBox, QSizePolicy, QComboBox
 )
 from PyQt5.QtCore import Qt, pyqtSignal
 
@@ -63,6 +63,9 @@ class ConfigWidget(QWidget):
         # Card: mudar senha
         col.addWidget(self._card_mudar_senha())
 
+        # Card: meta diaria
+        col.addWidget(self._card_meta_diaria())
+
         # Card: zona de perigo
         col.addWidget(self._card_zona_perigo())
 
@@ -109,6 +112,40 @@ class ConfigWidget(QWidget):
         btn_sair.clicked.connect(self._sair)
         lay.addWidget(btn_sair)
         return card
+
+    def _card_meta_diaria(self):
+        card, lay = self._make_card("META DIARIA")
+        info = QLabel(
+            "Quantos exercicios voce quer fazer por dia. A meta aparece na "
+            "tela inicial e ajuda a manter sua sequencia."
+        )
+        info.setWordWrap(True)
+        info.setStyleSheet(f"color: {C_MUTED}; font-size: 12px; border: none;")
+        lay.addWidget(info)
+
+        linha = QHBoxLayout()
+        lbl = QLabel("Exercicios por dia:")
+        lbl.setStyleSheet(f"color: {C_TEXT}; font-size: 13px; border: none;")
+        linha.addWidget(lbl)
+
+        self.combo_meta = QComboBox()
+        for v in (3, 5, 10, 15, 20, 30):
+            self.combo_meta.addItem(str(v), v)
+        atual = self.estado.get("meta_diaria", 5) if self.estado else 5
+        idx = self.combo_meta.findData(atual)
+        if idx >= 0:
+            self.combo_meta.setCurrentIndex(idx)
+        self.combo_meta.currentIndexChanged.connect(self._salvar_meta)
+        linha.addWidget(self.combo_meta)
+        linha.addStretch()
+        lay.addLayout(linha)
+        return card
+
+    def _salvar_meta(self, _idx):
+        if not self.estado:
+            return
+        meta = self.combo_meta.currentData()
+        prog.definir_meta_diaria(self.sessao["uid"], self.estado, meta)
 
     def _card_mudar_email(self):
         card, lay = self._make_card("ALTERAR EMAIL")

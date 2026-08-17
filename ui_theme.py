@@ -94,12 +94,12 @@ QTabWidget::pane {{
 QTabBar::tab {{
     background-color: transparent;
     color: {C_MUTED};
-    padding: 12px 32px;
+    padding: 18px 40px;
     margin-right: 4px;
-    min-width: 110px;
+    min-width: 140px;
     border-top-left-radius: 8px;
     border-top-right-radius: 8px;
-    font-size: 13px;
+    font-size: 18px;
     font-weight: 600;
 }}
 QTabBar::tab:selected {{
