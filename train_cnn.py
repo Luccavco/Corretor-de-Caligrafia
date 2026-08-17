@@ -36,8 +36,6 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, Dataset
 import numpy as np
-import os
-from PIL import Image
 
 
 # ─── 1. CALIBRACAO DOS LIMIARES DE QUALIDADE ────────────────────────────────

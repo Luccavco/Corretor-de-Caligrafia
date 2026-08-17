@@ -9,7 +9,7 @@ import sys
 import os
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
-    QPushButton, QLabel, QStackedWidget, QFrame, QSizePolicy, QComboBox,
+    QPushButton, QLabel, QStackedWidget, QFrame, QComboBox,
     QMessageBox, QSplashScreen, QSystemTrayIcon, QMenu, QAction
 )
 from PyQt5.QtGui import QCursor, QPixmap, QPainter, QColor, QFont, QIcon
@@ -17,7 +17,7 @@ from PyQt5.QtCore import Qt, QTimer, QThread
 
 from ui_theme import (
     STYLE, C_PANEL, C_CARD, C_TEXT, C_MUTED, C_BORDER, C_ACCENT, C_BG,
-    C_GOOD, C_OK, C_BAD,
+    C_GOOD, C_OK,
 )
 
 

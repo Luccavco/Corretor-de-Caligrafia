@@ -7,7 +7,11 @@ import os
 from firebase_config import get_pyrebase_auth
 
 
-ARQUIVO_SESSAO = "sessao.json"
+# Arquivo de sessao resolvido a partir da pasta deste arquivo, para
+# funcionar nao importa de onde o programa foi iniciado.
+ARQUIVO_SESSAO = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "sessao.json"
+)
 
 
 class ErroAuth(Exception):
@@ -134,11 +138,8 @@ def alterar_senha(id_token, nova_senha):
         raise ErroAuth("A nova senha precisa ter no minimo 6 caracteres.")
     try:
         auth = get_pyrebase_auth()
-        auth.update_profile(id_token, password=nova_senha) if False else None
-        # Pyrebase usa outro metodo para senha:
-        # POST accounts:update com password
-        auth.current_user = {"idToken": id_token}
-        # Metodo direto do pyrebase:
+        # O Pyrebase nao expoe troca de senha diretamente; chamamos o
+        # endpoint accounts:update da Identity Toolkit do Firebase.
         import requests
         resp = requests.post(
             f"https://identitytoolkit.googleapis.com/v1/accounts:update?key={auth.api_key}",

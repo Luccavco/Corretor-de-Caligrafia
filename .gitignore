@@ -1,8 +1,9 @@
 # ─── SEGREDOS (nunca commitar!) ─────────────────────────────────────
 google_credentials.json
+firebase_credentials.json
 credentials.json
 *service-account*.json
-*serviceaccount*.json
+sessao.json
 .env
 .env.*
 
@@ -21,7 +22,8 @@ __pycache__/
 data/
 datasets/
 
-# ─── PyInstaller / builds (pesados) ─────────────────────────────────
+# ─── Resquicios locais (nao pertencem ao repo) ──────────────────────
+progresso.json
 build/
 dist/
 *.spec
@@ -41,3 +43,4 @@ calligraphos-web/dist/
 # ─── Temporarios ────────────────────────────────────────────────────
 *.log
 desenho_*.png
+test_images/

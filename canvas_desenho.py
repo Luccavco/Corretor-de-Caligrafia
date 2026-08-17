@@ -24,7 +24,7 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtGui import QPainter, QPen, QImage, QColor, QFont, QFontMetrics
 from PyQt5.QtCore import Qt, QPoint, pyqtSignal
 
-from ui_theme import C_TEXT, C_MUTED, C_BORDER, C_ACCENT, C_CARD, C_PANEL
+from ui_theme import C_TEXT, C_BORDER, C_ACCENT, C_CARD, C_PANEL
 
 COR_GUIA = QColor(0, 0, 0, 45)   # preto bem transparente = efeito "letra fantasma"
 

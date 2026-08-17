@@ -3,11 +3,10 @@ import logging
 import os
 
 os.environ["TRANSFORMERS_VERBOSITY"] = "error"
-os.environ["HF_HUB_DISABLE_PROGRESS_BARS"] = "0"
+os.environ["HF_HUB_DISABLE_PROGRESS_BARS"] = "1"
 logging.getLogger("transformers").setLevel(logging.ERROR)
 
 from transformers import TrOCRProcessor, VisionEncoderDecoderModel
-from PIL import Image
 
 processor = None
 model = None

@@ -16,15 +16,19 @@ API_KEY = "AIzaSyAg1e77lJJqKtC-KBadiQgm0lRdmhdmMd0"
 # Os campos que nao usamos ficam com placeholders — a biblioteca exige.
 PYREBASE_CONFIG = {
     "apiKey": API_KEY,
-    "authDomain": "caligrafia.firebaseapp.com",
-    "projectId": "caligrafia",
-    "storageBucket": "caligrafia.appspot.com",
-    "messagingSenderId": "0",
+    "authDomain": "corretor-de-caligrafia.firebaseapp.com",
+    "projectId": "corretor-de-caligrafia",
+    "storageBucket": "corretor-de-caligrafia.firebasestorage.app",
+    "messagingSenderId": "719421467758",
     "appId": "0",
     "databaseURL": "",
 }
 
-CREDENCIAIS_ADMIN = "firebase_credentials.json"
+# Credenciais de admin resolvidas a partir da pasta deste arquivo, para
+# funcionar nao importa de onde o programa foi iniciado.
+CREDENCIAIS_ADMIN = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "firebase_credentials.json"
+)
 
 
 _pyrebase_app = None

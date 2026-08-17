@@ -84,13 +84,26 @@ def carregar(uid):
             "data_feitos_hoje": dados.get("data_feitos_hoje", ""),
         }
     except Exception:
-        return _estado_novo()
+        # Falha de leitura (ex: sem internet neste instante). Devolve um
+        # estado zerado apenas para a interface abrir, mas marcado como
+        # "somente leitura": o _salvar recusa gravar estados assim, para
+        # NAO sobrescrever o progresso real no Firestore com zeros caso a
+        # conexao volte no meio da sessao.
+        estado = _estado_novo()
+        estado["_somente_leitura"] = True
+        return estado
 
 
 def _salvar(uid, estado):
+    # Nunca grava um estado que veio de falha de leitura (ver carregar):
+    # isso apagaria o progresso real do usuario no Firestore.
+    if estado.get("_somente_leitura"):
+        return
     try:
         db = get_firestore()
-        db.collection("usuarios").document(uid).set(estado, merge=True)
+        # O marcador interno nunca deve ir para o banco
+        dados = {k: v for k, v in estado.items() if not k.startswith("_")}
+        db.collection("usuarios").document(uid).set(dados, merge=True)
     except Exception:
         pass
 
@@ -306,6 +319,25 @@ def remover_palavra_customizada(uid, estado, palavra):
 
 # ─── RESUMO PARA O PAINEL DE PROGRESSO ───────────────────────────────────────
 
+def _streak_efetiva(estado):
+    """Streak como deve ser EXIBIDA agora. O valor salvo so e recalculado
+    quando a pessoa pratica; entao, se a ultima pratica nao foi hoje nem
+    ontem, a sequencia ja foi quebrada e deve aparecer como 0 - mesmo que
+    o banco ainda guarde o numero antigo."""
+    salva = estado.get("streak_dias", 0)
+    ultima_str = estado.get("ultima_pratica", "")
+    if not ultima_str:
+        return 0
+    try:
+        ultima = datetime.strptime(ultima_str, "%Y-%m-%d").date()
+    except ValueError:
+        return 0
+    hoje = date.today()
+    if ultima == hoje or ultima == hoje - timedelta(days=1):
+        return salva
+    return 0
+
+
 def resumo(estado):
     """Calcula as metricas gerais exibidas no painel de progresso."""
     letras = estado.get("letras", {})
@@ -335,7 +367,7 @@ def resumo(estado):
         "fases_total": max_fases,
         "palavras": palavras,
         "exercicios_feitos": estado.get("exercicios_feitos", 0),
-        "streak_dias": estado.get("streak_dias", 0),
+        "streak_dias": _streak_efetiva(estado),
         "streak_recorde": estado.get("streak_recorde", 0),
         "conquistas_feitas": conquistas_feitas,
         "conquistas_total": total_conquistas,

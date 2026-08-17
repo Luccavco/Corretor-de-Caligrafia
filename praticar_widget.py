@@ -1,9 +1,9 @@
-"""Modo Praticar Caligrafia:
-- Aba Letras: grid estilo WaniKani com seletor de estilo (forma/cursiva).
-  Cada estilo tem progresso proprio (letras vs letras_cursiva no Firestore).
-  No estilo cursiva, o alvo e exibido com uma fonte cursiva real carregada
-  de fonts/cursiva.ttf (fallback para fontes do sistema se ausente).
-- Aba Palavras: 3 fases fixas + card "Minhas Palavras" gerenciavel.
+"""Modo Praticar Caligrafia, dividido em abas (QTabWidget):
+- Letras: grid de 26 letras com progresso por nivel (0-5).
+- Palavras: 3 fases fixas + card "Minhas Palavras" gerenciavel.
+- Quiz: sorteia letras ou palavras da lista pessoal.
+- Dicionario: busca definicoes e adiciona palavras ao treino.
+- Progresso: anel, estatisticas, mapa de calor e conquistas.
 """
 
 import os
@@ -12,16 +12,17 @@ import random
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel,
     QFileDialog, QTabWidget, QProgressBar, QSizePolicy, QFrame,
-    QStackedWidget, QScrollArea, QGridLayout, QComboBox, QDialog,
+    QStackedWidget, QScrollArea, QGridLayout, QDialog,
     QLineEdit, QListWidget, QListWidgetItem, QMessageBox
 )
-from PyQt5.QtGui import QPixmap, QCursor, QRegExpValidator
+from PyQt5.QtGui import (
+    QPixmap, QCursor, QRegExpValidator, QPainter, QColor
+)
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QRegExp
 
-from PyQt5.QtWidgets import QWidget as _QWidget
-from PyQt5.QtGui import QPainter, QColor
 from image_pipeline import process
 from handwriting_evaluator import avaliar_texto
+from ui_helpers import limpar_layout, cabecalho_aba
 from ui_theme import (
     C_BG, C_CARD, C_PANEL, C_TEXT, C_MUTED, C_BORDER, C_ACCENT,
     C_GOOD, C_OK, C_BAD, make_card,
@@ -29,7 +30,7 @@ from ui_theme import (
 import progresso as prog
 
 
-class BarraSegmentada(_QWidget):
+class BarraSegmentada(QWidget):
     """Barra de progresso dividida em segmentos visiveis (tequinhos).
     Cada segmento e preenchido individualmente. Fica verde apenas
     quando todos os segmentos estao preenchidos (nivel maximo)."""
@@ -101,9 +102,12 @@ class VerificarWorker(QThread):
     finished = pyqtSignal(str, object)
     error = pyqtSignal(str)
 
-    def __init__(self, image_path):
+    def __init__(self, image_path, apagar_ao_fim=False):
         super().__init__()
         self.image_path = image_path
+        # Quando a imagem e um PNG temporario do quadro, apaga apos usar
+        # para nao acumular arquivos desenho_*.png em /tmp.
+        self.apagar_ao_fim = apagar_ao_fim
 
     def run(self):
         try:
@@ -114,6 +118,12 @@ class VerificarWorker(QThread):
             self.finished.emit(texto, avaliacao)
         except Exception as e:
             self.error.emit(str(e))
+        finally:
+            if self.apagar_ao_fim:
+                try:
+                    os.remove(self.image_path)
+                except OSError:
+                    pass
 
 
 class LetraCard(QFrame):
@@ -531,7 +541,13 @@ class PainelExercicio(QWidget):
                 )
             else:
                 self.label_imagem.setText(msg)
-            self.finalizou.emit()
+            # So registra a fase como concluida se houve pelo menos um
+            # acerto. Sem isso, dava para "desbloquear" fases pulando
+            # todas as palavras (0 acertos) - a mensagem ja avisava que
+            # nao desbloqueou, mas o backend registrava assim mesmo.
+            # Fases personalizadas (custom) nao contam para o desbloqueio.
+            if self.acertos > 0 and not self.custom:
+                self.finalizou.emit()
 
         # Mostra a mensagem final no lugar do quadro
         self.stack_envio.setCurrentIndex(1)
@@ -578,7 +594,7 @@ class PainelExercicio(QWidget):
             )
             return
         path = self.canvas.salvar_png()
-        self._verificar_path(path)
+        self._verificar_path(path, temporario=True)
 
     def carregar_e_verificar(self):
         """Envia uma foto de arquivo para verificacao."""
@@ -603,13 +619,13 @@ class PainelExercicio(QWidget):
         )
         self._verificar_path(path)
 
-    def _verificar_path(self, path):
+    def _verificar_path(self, path, temporario=False):
         self.btn_enviar.setEnabled(False)
         self.btn_foto.setEnabled(False)
         self.btn_pular.setEnabled(False)
         self.progress.setVisible(True)
         self.label_feedback.setText("Analisando sua tentativa...")
-        self.worker = VerificarWorker(path)
+        self.worker = VerificarWorker(path, apagar_ao_fim=temporario)
         self.worker.finished.connect(self.on_verificado)
         self.worker.error.connect(self.on_erro)
         self.worker.start()
@@ -690,29 +706,8 @@ class AbaLetras(QWidget):
         self._construir()
 
     def _limpar(self):
-        while self._layout_raiz.count():
-            item = self._layout_raiz.takeAt(0)
-            w = item.widget()
-            if w is not None:
-                w.setParent(None)
-                w.deleteLater()
-            else:
-                sub = item.layout()
-                if sub is not None:
-                    self._limpar_layout(sub)
+        limpar_layout(self._layout_raiz)
         self.cards.clear()
-
-    def _limpar_layout(self, lay):
-        while lay.count():
-            item = lay.takeAt(0)
-            w = item.widget()
-            if w is not None:
-                w.setParent(None)
-                w.deleteLater()
-            else:
-                sub = item.layout()
-                if sub is not None:
-                    self._limpar_layout(sub)
 
     def _construir(self):
         if not self.estado.get("iniciou_letras", False):
@@ -765,22 +760,9 @@ class AbaLetras(QWidget):
         # Cabecalho padronizado (mesma estrutura da aba Palavras):
         # linha 1 = titulo + subtitulo + acao a direita (altura fixa)
         # linha 2 = barra de progresso geral (altura fixa)
-        header = QHBoxLayout()
-        header.setContentsMargins(0, 0, 0, 0)
-        titulo = QLabel("Progresso das Letras")
-        titulo.setStyleSheet(
-            f"color: {C_TEXT}; font-size: 31px; font-weight: 800;"
+        self._layout_raiz.addWidget(
+            cabecalho_aba("Progresso das Letras", "clique em uma letra para praticar")
         )
-        sub = QLabel("clique em uma letra para praticar")
-        sub.setStyleSheet(f"color: {C_MUTED}; font-size: 22px;")
-        header.addWidget(titulo, alignment=Qt.AlignVCenter)
-        header.addSpacing(16)
-        header.addWidget(sub, alignment=Qt.AlignVCenter)
-        header.addStretch()
-        header_wrap = QWidget()
-        header_wrap.setMinimumHeight(58)
-        header_wrap.setLayout(header)
-        self._layout_raiz.addWidget(header_wrap)
 
         # Barra de progresso geral (linha propria, altura fixa)
         prog_row = QHBoxLayout()
@@ -839,28 +821,7 @@ class AbaPalavras(QWidget):
         self._construir()
 
     def _limpar(self):
-        while self._layout_raiz.count():
-            item = self._layout_raiz.takeAt(0)
-            w = item.widget()
-            if w is not None:
-                w.setParent(None)
-                w.deleteLater()
-            else:
-                sub = item.layout()
-                if sub is not None:
-                    self._limpar_layout(sub)
-
-    def _limpar_layout(self, lay):
-        while lay.count():
-            item = lay.takeAt(0)
-            w = item.widget()
-            if w is not None:
-                w.setParent(None)
-                w.deleteLater()
-            else:
-                sub = item.layout()
-                if sub is not None:
-                    self._limpar_layout(sub)
+        limpar_layout(self._layout_raiz)
 
     def _construir(self):
         completas = self.estado["fases_completas"]
@@ -1030,28 +991,7 @@ class AbaQuiz(QWidget):
         self._construir()
 
     def _limpar(self):
-        while self._layout_raiz.count():
-            item = self._layout_raiz.takeAt(0)
-            w = item.widget()
-            if w is not None:
-                w.setParent(None)
-                w.deleteLater()
-            else:
-                sub = item.layout()
-                if sub is not None:
-                    self._limpar_layout(sub)
-
-    def _limpar_layout(self, lay):
-        while lay.count():
-            item = lay.takeAt(0)
-            w = item.widget()
-            if w is not None:
-                w.setParent(None)
-                w.deleteLater()
-            else:
-                sub = item.layout()
-                if sub is not None:
-                    self._limpar_layout(sub)
+        limpar_layout(self._layout_raiz)
 
     def _construir(self):
         # Cabecalho padronizado (mesma estrutura das outras abas)
@@ -1176,23 +1116,9 @@ class AbaDicionario(QWidget):
         raiz.setContentsMargins(20, 20, 20, 20)
         raiz.setSpacing(14)
 
-        # Cabecalho padronizado (mesma estrutura das outras abas)
-        header = QHBoxLayout()
-        header.setContentsMargins(0, 0, 0, 0)
-        titulo = QLabel("Dicionario")
-        titulo.setStyleSheet(
-            f"color: {C_TEXT}; font-size: 31px; font-weight: 800;"
+        raiz.addWidget(
+            cabecalho_aba("Dicionario", "busque uma palavra e adicione ao seu treino")
         )
-        sub = QLabel("busque uma palavra e adicione ao seu treino")
-        sub.setStyleSheet(f"color: {C_MUTED}; font-size: 22px;")
-        header.addWidget(titulo, alignment=Qt.AlignVCenter)
-        header.addSpacing(16)
-        header.addWidget(sub, alignment=Qt.AlignVCenter)
-        header.addStretch()
-        header_wrap = QWidget()
-        header_wrap.setMinimumHeight(58)
-        header_wrap.setLayout(header)
-        raiz.addWidget(header_wrap)
 
         # Barra de busca
         busca_row = QHBoxLayout()
@@ -1532,50 +1458,15 @@ class AbaProgresso(QWidget):
         self._construir()
 
     def _limpar(self):
-        while self._raiz.count():
-            item = self._raiz.takeAt(0)
-            w = item.widget()
-            if w is not None:
-                w.setParent(None)
-                w.deleteLater()
-            else:
-                sub = item.layout()
-                if sub is not None:
-                    self._limpar_layout(sub)
-
-    def _limpar_layout(self, lay):
-        while lay.count():
-            item = lay.takeAt(0)
-            w = item.widget()
-            if w is not None:
-                w.setParent(None)
-                w.deleteLater()
-            else:
-                sub = item.layout()
-                if sub is not None:
-                    self._limpar_layout(sub)
+        limpar_layout(self._raiz)
 
     def _construir(self):
         from anel_progresso import AnelProgresso
         r = prog.resumo(self.estado)
 
-        # Cabecalho padronizado
-        header = QHBoxLayout()
-        header.setContentsMargins(0, 0, 0, 0)
-        titulo = QLabel("Seu Progresso")
-        titulo.setStyleSheet(
-            f"color: {C_TEXT}; font-size: 31px; font-weight: 800;"
+        self._raiz.addWidget(
+            cabecalho_aba("Seu Progresso", "acompanhe sua evolucao na plataforma")
         )
-        sub = QLabel("acompanhe sua evolucao na plataforma")
-        sub.setStyleSheet(f"color: {C_MUTED}; font-size: 22px;")
-        header.addWidget(titulo, alignment=Qt.AlignVCenter)
-        header.addSpacing(16)
-        header.addWidget(sub, alignment=Qt.AlignVCenter)
-        header.addStretch()
-        header_wrap = QWidget()
-        header_wrap.setMinimumHeight(58)
-        header_wrap.setLayout(header)
-        self._raiz.addWidget(header_wrap)
 
         # Conteudo rolavel (pode ficar longo)
         scroll = QScrollArea()

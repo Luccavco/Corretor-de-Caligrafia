@@ -14,7 +14,13 @@ import re
 import unicodedata
 from google.cloud import vision
 
-os.environ.setdefault("GOOGLE_APPLICATION_CREDENTIALS", "google_credentials.json")
+# Credenciais resolvidas a partir da pasta deste arquivo (funciona nao
+# importa de onde o programa foi iniciado). setdefault preserva um
+# GOOGLE_APPLICATION_CREDENTIALS ja definido no ambiente, se houver.
+_CRED_PATH = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "google_credentials.json"
+)
+os.environ.setdefault("GOOGLE_APPLICATION_CREDENTIALS", _CRED_PATH)
 
 _client = None
 

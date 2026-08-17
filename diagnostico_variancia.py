@@ -12,7 +12,6 @@ Uso:
 
 import cv2
 import numpy as np
-import torch
 import torchvision.datasets as datasets
 import torchvision.transforms as transforms
 

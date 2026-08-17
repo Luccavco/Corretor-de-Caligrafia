@@ -3,7 +3,7 @@ e sair da conta. Requer confirmacao para acoes destrutivas."""
 
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
-    QPushButton, QFrame, QMessageBox, QSizePolicy, QComboBox
+    QPushButton, QFrame, QMessageBox, QComboBox
 )
 from PyQt5.QtCore import Qt, pyqtSignal
 

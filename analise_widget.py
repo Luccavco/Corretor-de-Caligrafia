@@ -11,16 +11,15 @@ import cv2
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel,
     QFileDialog, QTextEdit, QProgressBar, QScrollArea, QGridLayout,
-    QSizePolicy, QComboBox, QApplication, QFrame, QMessageBox,
+    QSizePolicy, QComboBox, QApplication, QMessageBox,
     QDialog, QListWidget, QListWidgetItem, QStackedWidget
 )
 from PyQt5.QtGui import QPixmap, QImage, QCursor
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 
 from image_pipeline import (
-    process, annotate_image, characters_from_boxes, annotate_from_characters,
+    annotate_image, characters_from_boxes, annotate_from_characters,
 )
-from htr_engine import predict_lines as trocr_predict_lines
 from handwriting_evaluator import avaliar_texto, gerar_relatorio
 
 from ui_theme import (
@@ -999,7 +998,7 @@ class TextoExpandidoDialog(QDialog):
         self.setup_ui()
 
     def setup_ui(self):
-        from ui_theme import C_PANEL, C_CARD, C_TEXT, C_MUTED, C_BORDER, C_OK
+        from ui_theme import C_PANEL, C_CARD, C_TEXT, C_MUTED, C_BORDER
         root = QVBoxLayout(self)
         root.setContentsMargins(24, 24, 24, 24)
         root.setSpacing(12)
@@ -1116,7 +1115,7 @@ class DetalheExpandidoDialog(QDialog):
 
     def setup_ui(self):
         from ui_theme import (
-            C_PANEL, C_TEXT, C_MUTED, C_BORDER, C_ACCENT,
+            C_TEXT, C_MUTED, C_ACCENT,
             C_GOOD, C_OK, C_BAD,
         )
         root = QVBoxLayout(self)

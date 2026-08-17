@@ -115,12 +115,8 @@ def _eh_classe_solta(linha):
     norm = _sem_acento(ln.lower()).strip(" ,.;")
     if norm in _CLASSES:
         return True
-    # fragmentos comuns que sobram da classe (ex: "transitivo indireto...")
-    fragmentos = (
-        "transitivo indireto", "transitivo direto", "intransitivo",
-        "pronominal", "transitivo",
-    )
-    # se a linha e so combinacao desses fragmentos + conectivos, descarta
+    # se a linha e so combinacao de marcadores de transitividade +
+    # conectivos (ex: "transitivo indireto e pronominal"), descarta
     palavras = norm.replace(" e ", " ").replace(",", " ").split()
     resto = [p for p in palavras if p not in (
         "transitivo", "indireto", "direto", "intransitivo", "pronominal"

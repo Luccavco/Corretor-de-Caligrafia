@@ -1,9 +1,15 @@
+import os
 import torch
 import torchvision.transforms as transforms
 from torchvision import models
 import torch.nn as nn
 from PIL import Image
 import numpy as np
+
+# Caminho do modelo resolvido a partir da pasta deste arquivo, para
+# funcionar nao importa de onde o programa foi iniciado.
+_AQUI = os.path.dirname(os.path.abspath(__file__))
+MODELO_PATH = os.path.join(_AQUI, "modelo_caligrafia.pth")
 
 modelo_cnn = None
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -27,7 +33,7 @@ def load_modelo():
     modelo_cnn = models.mobilenet_v2(weights=None)
     modelo_cnn.classifier[1] = nn.Linear(modelo_cnn.last_channel, 3)
     modelo_cnn.load_state_dict(
-        torch.load("modelo_caligrafia.pth", map_location=device)
+        torch.load(MODELO_PATH, map_location=device)
     )
     modelo_cnn.to(device)
     modelo_cnn.eval()
