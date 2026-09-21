@@ -51,6 +51,15 @@ def test_glifo_e_fonte():
     assert m.max() == 255 and lp.caixa_tinta(m) is not None
 
 
+def test_dataset_emnist_augmentado():
+    import train_cnn as tc
+    ds = tc.DatasetLetras(treino=True, limite=64)
+    x, y = ds[0]
+    assert tuple(x.shape) == (3, lp.TAMANHO, lp.TAMANHO)
+    assert 0 <= int(y) < 26
+    assert len(ds) == 64
+
+
 if __name__ == "__main__":
     import sys
     falhas = 0

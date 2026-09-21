@@ -44,3 +44,6 @@ calligraphos-web/dist/
 *.log
 desenho_*.png
 test_images/
+
+# Config local do Claude Code (launch.json)
+.claude/
