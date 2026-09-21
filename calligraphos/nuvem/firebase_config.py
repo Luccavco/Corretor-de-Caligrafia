@@ -2,7 +2,6 @@
 Contem a chave publica (apiKey) para o Pyrebase (login/registro)
 e inicializa o firebase-admin para acessar o Firestore com privilegios."""
 
-import os
 from calligraphos.caminhos import CREDENCIAIS_FIREBASE
 import firebase_admin
 from firebase_admin import credentials, firestore

@@ -8,6 +8,20 @@ from PyQt5.QtCore import Qt, QRect, QPoint, QSize
 from calligraphos.ui.ui_theme import C_TEXT, C_MUTED
 
 
+def rotulo(texto, cor=C_TEXT, tamanho=13, peso=None, quebra=False, alinhamento=None):
+    """QLabel com cor, tamanho e peso de fonte, sem borda (labels dentro de
+    cartoes herdariam a borda do QFrame). Substitui o par QLabel +
+    setStyleSheet repetido pelas telas."""
+    lbl = QLabel(texto)
+    negrito = f" font-weight: {peso};" if peso else ""
+    lbl.setStyleSheet(f"color: {cor}; font-size: {tamanho}px;{negrito} border: none;")
+    if quebra:
+        lbl.setWordWrap(True)
+    if alinhamento is not None:
+        lbl.setAlignment(alinhamento)
+    return lbl
+
+
 def limpar_layout(lay):
     """Remove e destroi recursivamente todos os itens de um layout
     (widgets e sub-layouts). Usado para reconstruir uma aba do zero."""
@@ -31,12 +45,8 @@ def cabecalho_aba(titulo, subtitulo, acao=None):
     header = QHBoxLayout()
     header.setContentsMargins(0, 0, 0, 0)
 
-    lbl_titulo = QLabel(titulo)
-    lbl_titulo.setStyleSheet(
-        f"color: {C_TEXT}; font-size: 28px; font-weight: 800;"
-    )
-    lbl_sub = QLabel(subtitulo)
-    lbl_sub.setStyleSheet(f"color: {C_MUTED}; font-size: 17px;")
+    lbl_titulo = rotulo(titulo, C_TEXT, 28, peso=800)
+    lbl_sub = rotulo(subtitulo, C_MUTED, 17)
     lbl_sub.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Preferred)
 
     header.addWidget(lbl_titulo, alignment=Qt.AlignVCenter)

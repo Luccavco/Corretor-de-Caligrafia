@@ -126,25 +126,38 @@ QTabBar::tab:!selected {{ margin-top: 3px; }}
 """
 
 
-def make_card(parent_style, title=None):
-    """Cria um painel padrao com titulo opcional. Devolve (widget, layout)."""
+def make_card(parent_style=None, title=None, *, margens=(16, 14, 16, 14), espacamento=8,
+              raio=12, cor_borda=None, fonte_titulo=13, espacamento_letras=1):
+    """Cria um painel padrao (fundo, borda, raio) com titulo opcional em
+    caixa alta. Devolve (widget, layout). Os parametros nomeados cobrem as
+    variantes usadas pelas telas (configuracoes, detalhe da letra...)."""
     from PyQt5.QtWidgets import QFrame, QVBoxLayout, QLabel
     card = QFrame()
     card.setStyleSheet(
-        f"QFrame {{ background-color: {C_PANEL}; border: 1px solid {C_BORDER};"
-        f" border-radius: 12px; }}"
+        f"QFrame {{ background-color: {C_PANEL}; border: 1px solid {cor_borda or C_BORDER};"
+        f" border-radius: {raio}px; }}"
     )
     layout = QVBoxLayout(card)
-    layout.setContentsMargins(16, 14, 16, 14)
-    layout.setSpacing(8)
+    layout.setContentsMargins(*margens)
+    layout.setSpacing(espacamento)
     if title:
         lbl = QLabel(title)
         lbl.setStyleSheet(
-            f"color: {C_MUTED}; font-size: 13px; font-weight: 700;"
-            f" letter-spacing: 1px; border: none;"
+            f"color: {C_MUTED}; font-size: {fonte_titulo}px; font-weight: 700;"
+            f" letter-spacing: {espacamento_letras}px; border: none;"
         )
         layout.addWidget(lbl)
     return card, layout
+
+
+def estilo_input(padding="10px 12px"):
+    """Folha de estilo dos campos de texto (login, cadastro, configuracoes)."""
+    return (
+        f"QLineEdit {{ background-color: {C_CARD}; color: {C_TEXT};"
+        f" border: 1px solid {C_BORDER}; border-radius: 8px;"
+        f" padding: {padding}; font-size: 13px; }}"
+        f"QLineEdit:focus {{ border: 1px solid {C_ACCENT}; }}"
+    )
 
 
 def stat_chip(cor, texto):

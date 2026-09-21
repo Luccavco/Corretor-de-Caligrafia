@@ -8,9 +8,9 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import Qt, pyqtSignal
 
 from calligraphos.ui.ui_theme import (
-    C_PANEL, C_CARD, C_TEXT, C_MUTED, C_BORDER, C_ACCENT,
-    C_GOOD, C_BAD, com_alpha,
+    C_PANEL, C_TEXT, C_MUTED, C_GOOD, C_BAD, com_alpha, make_card, estilo_input,
 )
+from calligraphos.ui.ui_helpers import rotulo
 from calligraphos.nuvem.auth_service import alterar_email, alterar_senha, ErroAuth
 from calligraphos.nuvem import progresso as prog
 class ConfigWidget(QWidget):
@@ -81,40 +81,18 @@ class ConfigWidget(QWidget):
     # ── Cards ──────────────────────────────────────────────────────
 
     def _make_card(self, titulo):
-        card = QFrame()
-        card.setStyleSheet(
-            f"QFrame {{ background-color: {C_PANEL};"
-            f" border: 1px solid {C_BORDER}; border-radius: 12px; }}"
-        )
-        lay = QVBoxLayout(card)
-        lay.setContentsMargins(20, 16, 20, 16)
-        lay.setSpacing(10)
-        lbl = QLabel(titulo)
-        lbl.setStyleSheet(
-            f"color: {C_MUTED}; font-size: 11px; font-weight: 700;"
-            f" letter-spacing: 1.2px; border: none;"
-        )
-        lay.addWidget(lbl)
-        return card, lay
+        return make_card(None, titulo, margens=(20, 16, 20, 16), espacamento=10,
+                         fonte_titulo=11, espacamento_letras=1.2)
 
     def _estilo_input(self):
-        return (
-            f"QLineEdit {{ background-color: {C_CARD}; color: {C_TEXT};"
-            f" border: 1px solid {C_BORDER}; border-radius: 8px;"
-            f" padding: 9px 12px; font-size: 13px; }}"
-            f"QLineEdit:focus {{ border: 1px solid {C_ACCENT}; }}"
-        )
+        return estilo_input(padding="9px 12px")
 
     def _card_conta(self):
         card, lay = self._make_card("CONTA")
-        info = QLabel(f"Você está logado como:")
-        info.setStyleSheet(f"color: {C_MUTED}; font-size: 12px; border: none;")
+        info = rotulo("Você está logado como:", C_MUTED, 12)
         lay.addWidget(info)
 
-        self.lbl_email_atual = QLabel(self.sessao.get("email", "?"))
-        self.lbl_email_atual.setStyleSheet(
-            f"color: {C_TEXT}; font-size: 15px; font-weight: 600; border: none;"
-        )
+        self.lbl_email_atual = rotulo(self.sessao.get("email", "?"), C_TEXT, 15, peso=600)
         lay.addWidget(self.lbl_email_atual)
 
         btn_sair = QPushButton("Sair da conta")
@@ -133,8 +111,7 @@ class ConfigWidget(QWidget):
         lay.addWidget(info)
 
         linha = QHBoxLayout()
-        lbl = QLabel("Exercícios por dia:")
-        lbl.setStyleSheet(f"color: {C_TEXT}; font-size: 13px; border: none;")
+        lbl = rotulo("Exercícios por dia:")
         linha.addWidget(lbl)
 
         self.combo_meta = QComboBox()

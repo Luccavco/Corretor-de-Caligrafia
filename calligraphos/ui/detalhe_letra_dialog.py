@@ -5,15 +5,15 @@ a sugestao de treino acontece depois, em quem chamou o dialog."""
 
 from PyQt5.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
-    QFrame, QProgressBar, QLineEdit, QWidget
+    QProgressBar, QLineEdit, QWidget
 )
 from PyQt5.QtCore import Qt, pyqtSignal, QRegExp
 from PyQt5.QtGui import QRegExpValidator
 
 from calligraphos.ui.ui_theme import (
-    C_BG, C_PANEL, C_CARD, C_TEXT, C_MUTED, C_BORDER, C_ACCENT,
-    C_GOOD, C_OK, C_BAD, com_alpha,
+    C_BG, C_PANEL, C_CARD, C_TEXT, C_MUTED, C_BORDER, C_ACCENT, C_GOOD, C_OK, C_BAD, com_alpha, make_card,
 )
+from calligraphos.ui.ui_helpers import rotulo
 
 
 class DetalheLetraDialog(QDialog):
@@ -96,23 +96,8 @@ class DetalheLetraDialog(QDialog):
     # ── Cards ──────────────────────────────────────────────────────
 
     def _make_card(self, titulo, cor_borda=None):
-        card = QFrame()
-        borda = cor_borda or C_BORDER
-        card.setStyleSheet(
-            f"QFrame {{ background-color: {C_PANEL};"
-            f" border: 1px solid {borda}; border-radius: 10px; }}"
-        )
-        lay = QVBoxLayout(card)
-        lay.setContentsMargins(16, 12, 16, 12)
-        lay.setSpacing(6)
-        if titulo:
-            lbl = QLabel(titulo)
-            lbl.setStyleSheet(
-                f"color: {C_MUTED}; font-size: 10px; font-weight: 700;"
-                f" letter-spacing: 1.2px; border: none;"
-            )
-            lay.addWidget(lbl)
-        return card, lay
+        return make_card(None, titulo, margens=(16, 12, 16, 12), espacamento=6, raio=10,
+                         cor_borda=cor_borda, fonte_titulo=10, espacamento_letras=1.2)
 
     def _card_avaliacao(self):
         card, lay = self._make_card("AVALIAÇÃO DA CALIGRAFIA")
@@ -128,8 +113,7 @@ class DetalheLetraDialog(QDialog):
         linha.addStretch()
         r = self.resultado
         texto_dir = f"nota {r['nota']:.0f}/100" if r else f"{self.confianca:.0%} de confiança"
-        lbl_conf = QLabel(texto_dir)
-        lbl_conf.setStyleSheet(f"color: {C_MUTED}; font-size: 12px; border: none;")
+        lbl_conf = rotulo(texto_dir, C_MUTED, 12)
         linha.addWidget(lbl_conf)
         lay.addLayout(linha)
 

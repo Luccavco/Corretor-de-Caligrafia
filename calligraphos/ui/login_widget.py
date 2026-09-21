@@ -8,9 +8,9 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import Qt, pyqtSignal, QThread
 
 from calligraphos.ui.ui_theme import (
-    C_PANEL, C_CARD, C_TEXT, C_MUTED, C_BORDER, C_ACCENT,
-    C_BAD,
+    C_PANEL, C_TEXT, C_MUTED, C_BORDER, C_BAD, estilo_input,
 )
+from calligraphos.ui.ui_helpers import rotulo
 from calligraphos.nuvem.auth_service import login, registrar, ErroAuth
 
 
@@ -81,10 +81,7 @@ class LoginWidget(QWidget):
         form_layout.setContentsMargins(28, 24, 28, 24)
         form_layout.setSpacing(12)
 
-        self.lbl_titulo_form = QLabel("Entrar")
-        self.lbl_titulo_form.setStyleSheet(
-            f"color: {C_TEXT}; font-size: 18px; font-weight: 700; border: none;"
-        )
+        self.lbl_titulo_form = rotulo("Entrar", C_TEXT, 18, peso=700)
         form_layout.addWidget(self.lbl_titulo_form)
 
         self.input_email = QLineEdit()
@@ -138,12 +135,7 @@ class LoginWidget(QWidget):
         root.addStretch(2)
 
     def _estilo_input(self):
-        return (
-            f"QLineEdit {{ background-color: {C_CARD}; color: {C_TEXT};"
-            f" border: 1px solid {C_BORDER}; border-radius: 8px;"
-            f" padding: 10px 12px; font-size: 13px; }}"
-            f"QLineEdit:focus {{ border: 1px solid {C_ACCENT}; }}"
-        )
+        return estilo_input()
 
     def _alternar_modo(self):
         if self.modo == "login":

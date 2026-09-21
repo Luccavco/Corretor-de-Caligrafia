@@ -14,7 +14,6 @@ Categorias: Boa >= 75, Aceitavel >= 50, Ruim < 50.
 """
 
 import logging
-import os
 
 import numpy as np
 import torch

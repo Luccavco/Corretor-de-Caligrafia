@@ -21,6 +21,7 @@ from calligraphos.ui.ui_theme import (
     STYLE, C_PANEL, C_CARD, C_TEXT, C_MUTED, C_BORDER, C_ACCENT, C_BG,
     C_GOOD, C_OK,
 )
+from calligraphos.ui.ui_helpers import rotulo
 
 
 def _caminho_icone():
@@ -135,16 +136,14 @@ class TelaInicial(QWidget):
         # Topo: idioma a esquerda, email + configuracoes a direita
         topo = QHBoxLayout()
         topo.setSpacing(10)
-        lbl_idioma = QLabel("Idioma:")
-        lbl_idioma.setStyleSheet(f"color: {C_MUTED}; font-size: 13px;")
+        lbl_idioma = rotulo("Idioma:", C_MUTED)
         combo_idioma = QComboBox()
         combo_idioma.addItem("Português (BR)")
         combo_idioma.setToolTip("Outros idiomas serão adicionados futuramente")
         topo.addWidget(lbl_idioma)
         topo.addWidget(combo_idioma)
         topo.addStretch()
-        lbl_email = QLabel(email)
-        lbl_email.setStyleSheet(f"color: {C_MUTED}; font-size: 13px;")
+        lbl_email = rotulo(email, C_MUTED)
         topo.addWidget(lbl_email)
         topo.addSpacing(6)
         btn_config = QPushButton("Configurações")
@@ -283,7 +282,7 @@ class TelaInicial(QWidget):
         if n_pend > 0:
             texto_rev = (
                 f"letra para revisar: {', '.join(pendentes)}" if n_pend <= 8
-                else f"letras para revisar hoje"
+                else "letras para revisar hoje"
             )
         else:
             texto_rev = "nenhuma revisão pendente"
@@ -538,7 +537,7 @@ class MainWindow(QMainWindow):
             # Primeira abertura carrega o modulo: mostra cursor de espera
             QApplication.setOverrideCursor(Qt.WaitCursor)
             try:
-                from calligraphos.ui.praticar_widget import PraticarWidget
+                from calligraphos.ui.praticar import PraticarWidget
                 self.praticar = PraticarWidget(self.sessao["uid"], self.estado)
                 self.praticar.voltar_solicitado.connect(self._voltar_inicio)
                 self.stack.addWidget(self.praticar)
@@ -550,7 +549,7 @@ class MainWindow(QMainWindow):
         if self.analise is None:
             QApplication.setOverrideCursor(Qt.WaitCursor)
             try:
-                from calligraphos.ui.analise_widget import AnaliseWidget
+                from calligraphos.ui.analise import AnaliseWidget
                 self.analise = AnaliseWidget(
                     tem_conta=True,
                     estado_progresso=self.estado,
@@ -587,7 +586,7 @@ class MainWindow(QMainWindow):
 
     def _pediu_treinar_letra(self, letra):
         if self.praticar is None:
-            from calligraphos.ui.praticar_widget import PraticarWidget
+            from calligraphos.ui.praticar import PraticarWidget
             self.praticar = PraticarWidget(self.sessao["uid"], self.estado)
             self.praticar.voltar_solicitado.connect(self._voltar_inicio)
             self.stack.addWidget(self.praticar)

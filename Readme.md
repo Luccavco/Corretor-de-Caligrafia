@@ -158,8 +158,8 @@ npm run dev
 │   └── ui/                       # Interface (PyQt5)
 │       ├── main_ui.py            #   Janela principal, splash e fluxo do app
 │       ├── login_widget.py, onboarding_widget.py, config_widget.py
-│       ├── analise_widget.py     #   Modo Análise Individual
-│       ├── praticar_widget.py    #   Modo Praticar (letras, palavras, quiz, dicionário, progresso)
+│       ├── analise/              #   Modo Análise Individual (widget, worker, componentes, diálogos)
+│       ├── praticar/             #   Modo Praticar (abas, cartões, painel de exercício, constantes)
 │       ├── canvas_desenho.py     #   Quadro de desenho com letra-guia
 │       ├── detalhe_letra_dialog.py, sobre_dialog.py
 │       ├── anel_progresso.py, grafico_evolucao.py

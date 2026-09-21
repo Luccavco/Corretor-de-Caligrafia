@@ -8,7 +8,6 @@ tolerante para criancas em alfabetizacao)."""
 import copy
 import json
 import logging
-import os
 
 log = logging.getLogger(__name__)
 from calligraphos.caminhos import CONFIG as CAMINHO_CONFIG

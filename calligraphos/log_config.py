@@ -6,7 +6,6 @@ silenciados (Firestore fora do ar, sessao ilegivel) ficam registrados aqui
 para diagnostico sem poluir a interface."""
 
 import logging
-import os
 from logging.handlers import RotatingFileHandler
 
 from calligraphos.caminhos import LOG as CAMINHO_LOG
