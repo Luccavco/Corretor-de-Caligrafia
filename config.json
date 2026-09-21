@@ -1,0 +1,30 @@
+{
+  "motor_htr_padrao": "google",
+
+  "avaliador": {
+    "nota_boa": 75,
+    "nota_aceitavel": 50,
+    "expoente_legibilidade": 0.5,
+    "expoente_formacao": 1.25,
+    "penalidade_segunda_opcao": 0.5
+  },
+
+  "exercicio": {
+    "nota_minima_letra": 65,
+    "nota_minima_pior_letra_palavra": 40
+  },
+
+  "formacao": {
+    "pesos": {"iou": 0.40, "tracos": 0.20, "proporcao": 0.15, "inclinacao": 0.10, "espessura": 0.15},
+    "semelhanca_zero": 0.45,
+    "semelhanca_boa": 0.85,
+    "tracos_zero": 0.35,
+    "tracos_bom": 0.90,
+    "proporcao_tolerancia": 0.20,
+    "proporcao_zero": 1.00,
+    "inclinacao_tolerancia_graus": 4.0,
+    "inclinacao_zero_graus": 20.0,
+    "espessura_tolerancia": 0.25,
+    "espessura_zero": 0.70
+  }
+}

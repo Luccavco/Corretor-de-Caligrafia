@@ -30,6 +30,7 @@ from ui_theme import (
     C_GOOD, C_OK, C_BAD, make_card, com_alpha,
 )
 import progresso as prog
+from config import CONFIG
 
 
 class BarraSegmentada(QWidget):
@@ -98,8 +99,9 @@ FASES = [
 LETRAS = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
 FONTE_FORMA = "'Cambria', 'Georgia', serif"
-NOTA_MINIMA_LETRA = 65   # nota minima para o exercicio contar como acerto
-NOTA_MINIMA_PIOR = 40    # numa palavra, nenhuma letra pode ficar abaixo disto
+# Ajustaveis em config.json (secao "exercicio")
+NOTA_MINIMA_LETRA = CONFIG["exercicio"]["nota_minima_letra"]              # acerto no exercicio
+NOTA_MINIMA_PIOR = CONFIG["exercicio"]["nota_minima_pior_letra_palavra"]  # numa palavra, piso por letra
 
 
 class VerificarWorker(QThread):

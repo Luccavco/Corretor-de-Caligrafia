@@ -173,7 +173,7 @@ class AnaliseWidget(QWidget):
         self.imagem_processada_bgr = None
         self.modo_adicionar_ativo = False
         self.modo_remover_ativo = False
-        self.motor_usado = "google"
+        self.motor_usado = self.combo_motor.currentData() if hasattr(self, "combo_motor") else "google"
         self.indice_destacado = None      # caixa automatica destacada
         self.manual_destacado = None      # caixa manual destacada
         self.setAcceptDrops(True)
@@ -217,6 +217,10 @@ class AnaliseWidget(QWidget):
         self.combo_motor = QComboBox()
         self.combo_motor.addItem("Google Vision (online)", "google")
         self.combo_motor.addItem("TrOCR - palavra única (offline)", "trocr")
+        from config import CONFIG
+        idx_padrao = self.combo_motor.findData(CONFIG.get("motor_htr_padrao", "google"))
+        if idx_padrao >= 0:
+            self.combo_motor.setCurrentIndex(idx_padrao)
         self.combo_motor.currentIndexChanged.connect(self._on_motor_mudou)
         header.addWidget(lbl_motor)
         header.addWidget(self.combo_motor)

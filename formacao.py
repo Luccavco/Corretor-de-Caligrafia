@@ -16,15 +16,18 @@ import cv2
 import numpy as np
 
 import letra_prep as lp
+from config import CONFIG
 
-PESOS = {"iou": 0.40, "tracos": 0.20, "proporcao": 0.15, "inclinacao": 0.10, "espessura": 0.15}
-IOU_BOM, IOU_ZERO = 0.85, 0.45   # semelhanca >= BOM vale 1.0; <= ZERO vale 0.0
+# Ajustaveis em config.json (secao "formacao")
+_CFG = CONFIG["formacao"]
+PESOS = dict(_CFG["pesos"])
+IOU_BOM, IOU_ZERO = _CFG["semelhanca_boa"], _CFG["semelhanca_zero"]   # semelhanca >= BOM vale 1.0; <= ZERO vale 0.0
 TOL_PIXELS = 2          # tolerancia de alinhamento em pixels
-PROP_TOL, PROP_ZERO = 0.20, 1.00     # desvio relativo: <= TOL vale 1, >= ZERO vale 0
-TRACOS_ZERO, TRACOS_BOM = 0.35, 0.90  # semelhanca dos histogramas de direcao
+PROP_TOL, PROP_ZERO = _CFG["proporcao_tolerancia"], _CFG["proporcao_zero"]   # desvio relativo
+TRACOS_ZERO, TRACOS_BOM = _CFG["tracos_zero"], _CFG["tracos_bom"]           # histogramas de direcao
 ORIENT_BINS = 12
-INCL_TOL, INCL_ZERO = 4.0, 20.0      # graus
-ESP_TOL, ESP_ZERO = 0.25, 0.70       # coeficiente de variacao da espessura
+INCL_TOL, INCL_ZERO = _CFG["inclinacao_tolerancia_graus"], _CFG["inclinacao_zero_graus"]
+ESP_TOL, ESP_ZERO = _CFG["espessura_tolerancia"], _CFG["espessura_zero"]   # coef. de variacao
 ESCALAS = (0.9, 1.0, 1.1)
 DESLOCS = (-4, 0, 4)
 

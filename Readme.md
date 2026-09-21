@@ -84,6 +84,14 @@ Sem esses arquivos, o app abre, mas o login não funciona. Sem o Google Vision (
 
 ---
 
+## Ajustes (`config.json`)
+
+Os limiares da nota (Boa/Aceitável), a nota mínima para acertar no exercício, os pesos das medidas de formação e o motor de HTR padrão ficam em `config.json`, na raiz do projeto. Edite o arquivo e reabra o app — não é preciso mexer no código. Os valores padrão estão em `config.py`.
+
+Erros e avisos ficam registrados em `calligraphos.log` (rotativo), útil para diagnosticar problemas relatados por outros usuários.
+
+---
+
 ## Como usar
 
 ### Aplicativo
@@ -133,6 +141,8 @@ npm run dev
 ├── canvas_desenho.py         # Quadro de desenho com letra-guia
 ├── ui_helpers.py             # Utilitários de interface compartilhados
 ├── ui_theme.py               # Cores e estilos
+├── config.py / config.json   # Ajustes (limiares, pesos, motor padrão)
+├── log_config.py             # Logging em calligraphos.log
 │
 ├── image_pipeline.py         # Pré-processamento e segmentação (OpenCV)
 ├── htr_google.py             # Transcrição via Google Cloud Vision
@@ -168,7 +178,7 @@ Para o reconhecimento, o Google Cloud Vision é o motor principal, por lidar bem
 ## Limitações conhecidas
 
 - O sistema foi desenvolvido para texto em **letra de forma**
-- A parcela de formação da nota compara a letra com moldes de fontes de letra de forma; estilos pessoais válidos podem perder pontos. Os pesos e limiares ficam em constantes no topo de `formacao.py` e `handwriting_evaluator.py`
+- A parcela de formação da nota compara a letra com moldes de fontes de letra de forma; estilos pessoais válidos podem perder pontos. Os pesos e limiares são ajustáveis em `config.json`
 - O motor offline (TrOCR) é otimizado para inglês e serve apenas para palavra única; para texto em português e frases, use o Google Vision
 - Fotos com iluminação muito irregular ou sombra forte podem reduzir a precisão da transcrição
 

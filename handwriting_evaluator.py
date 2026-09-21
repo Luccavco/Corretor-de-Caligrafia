@@ -22,16 +22,19 @@ import torch
 import letra_prep as lp
 from formacao import avaliar_formacao
 from train_cnn import construir_modelo, CLASSES
+from config import CONFIG
 
 log = logging.getLogger(__name__)
 _AQUI = os.path.dirname(os.path.abspath(__file__))
 MODELO_PATH = os.path.join(_AQUI, "modelo_caligrafia.pth")
 
-EXPOENTE_LEGIBILIDADE = 0.5    # raiz quadrada: porta suave
-EXPOENTE_FORMACAO = 1.25       # > 1 acentua diferencas de formacao
-NOTA_BOA = 75
-NOTA_ACEITAVEL = 50
-PENALIDADE_SEGUNDA = 0.5
+# Ajustaveis em config.json (secao "avaliador")
+_CFG = CONFIG["avaliador"]
+EXPOENTE_LEGIBILIDADE = _CFG["expoente_legibilidade"]   # raiz quadrada: porta suave
+EXPOENTE_FORMACAO = _CFG["expoente_formacao"]           # > 1 acentua diferencas de formacao
+NOTA_BOA = _CFG["nota_boa"]
+NOTA_ACEITAVEL = _CFG["nota_aceitavel"]
+PENALIDADE_SEGUNDA = _CFG["penalidade_segunda_opcao"]
 
 CATEGORIAS = {0: "Ruim", 1: "Aceitável", 2: "Boa"}
 _EXPLICACOES = {
