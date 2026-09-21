@@ -139,7 +139,9 @@ def avaliar_texto(characters, alvos=None, batch_size=32):
 
 
 def explicar_letra(r):
-    """Frase curta dizendo o principal problema da letra."""
+    """Frase curta dizendo o principal problema da letra (ou que está boa)."""
+    if r["classe"] == 2:
+        return "bem formada"
     if r["legibilidade"] < 0.4 and r["letra_prevista"] != r["letra_alvo"]:
         return f"parecendo '{r['letra_prevista']}'"
     if r["legibilidade"] < 0.4:

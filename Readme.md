@@ -130,6 +130,16 @@ python tests/test_avaliador.py
 
 ---
 
+## Serviço HTTP (API)
+
+O avaliador também pode ser usado por outros clientes (o site instalado no celular, por exemplo) sem duplicar código:
+```
+python -m calligraphos.api
+```
+Sobe em `http://localhost:8000` (documentação interativa em `/docs`). `POST /avaliar` recebe a imagem e a letra/palavra esperada e devolve as notas por letra, o texto, a imagem anotada e o mapa de diferenças.
+
+---
+
 ## Site web
 
 O site (pasta `calligraphos-web/`) é uma versão leve, no estilo do AnkiWeb: a pessoa entra com a mesma conta do aplicativo, acompanha o progresso e pratica o básico por *tracing* (traçar sobre um molde, com verificação geométrica, sem IA). Os recursos pesados (transcrição e avaliação) ficam apenas no aplicativo.
@@ -150,6 +160,7 @@ npm run dev
 │   ├── caminhos.py               # Caminhos dos arquivos da raiz (modelo, config, credenciais)
 │   ├── config.py                 # Leitura do config.json (padrões embutidos)
 │   ├── log_config.py             # Logging em calligraphos.log
+│   ├── api.py                    # Serviço HTTP do avaliador (FastAPI)
 │   ├── nucleo/                   # Visão computacional e avaliação
 │   │   ├── image_pipeline.py     #   Pré-processamento e segmentação (OpenCV)
 │   │   ├── letra_prep.py         #   Normalização de letras (treino e inferência)
