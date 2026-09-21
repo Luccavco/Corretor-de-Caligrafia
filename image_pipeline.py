@@ -153,6 +153,46 @@ def _merge_overlapping(boxes):
     return [tuple(b) for b in merged]
 
 
+# Uma letra maiuscula de forma raramente e mais larga que alta (M e W chegam
+# a ~1.2). Caixas mais largas que isso costumam ser duas letras encostadas.
+RAZAO_MAX_LETRA = 1.35
+
+
+def _dividir_letras_coladas(line_binary, box, profundidade=0):
+    """Se a caixa for larga demais para uma letra, procura o vale do perfil
+    vertical de tinta (coluna com menos tinta, longe das bordas) e divide
+    ali, recursivamente. Devolve a lista de caixas resultante."""
+    x, y, w, h = box
+    if profundidade > 3 or w < 12 or w / max(h, 1) <= RAZAO_MAX_LETRA:
+        return [box]
+    tinta = (line_binary[y:y + h, x:x + w] < 128).sum(axis=0)
+    margem = max(3, int(w * 0.2))
+    interior = tinta[margem:w - margem]
+    if interior.size == 0:
+        return [box]
+    corte = int(np.argmin(interior)) + margem
+    # So divide se o vale for bem mais raso que o traco tipico da caixa
+    if tinta[corte] > 0.35 * np.median(tinta[tinta > 0]):
+        return [box]
+    esquerda = (x, y, corte, h)
+    direita = (x + corte, y, w - corte, h)
+    return (_dividir_letras_coladas(line_binary, esquerda, profundidade + 1)
+            + _dividir_letras_coladas(line_binary, direita, profundidade + 1))
+
+
+def _reajustar_caixa(line_binary, box):
+    """Encolhe a caixa ate a tinta que ela realmente contem (apos um corte
+    a altura pode ficar sobrando)."""
+    x, y, w, h = box
+    sub = line_binary[y:y + h, x:x + w] < 128
+    linhas = np.where(sub.any(axis=1))[0]
+    colunas = np.where(sub.any(axis=0))[0]
+    if linhas.size == 0 or colunas.size == 0:
+        return box
+    return (x + int(colunas[0]), y + int(linhas[0]),
+            int(colunas[-1] - colunas[0] + 1), int(linhas[-1] - linhas[0] + 1))
+
+
 def segment_characters_in_line(line_binary, offset_y=0):
     """Encontra e recorta cada letra dentro de uma linha de texto."""
     contours, _ = cv2.findContours(
@@ -167,6 +207,13 @@ def segment_characters_in_line(line_binary, offset_y=0):
             boxes.append((x, y, w, h))
 
     boxes = _merge_overlapping(boxes)
+
+    # Letras encostadas (ex.: "CA" num contorno so) viram caixas separadas
+    divididas = []
+    for b in boxes:
+        for parte in _dividir_letras_coladas(line_binary, b):
+            divididas.append(_reajustar_caixa(line_binary, parte))
+    boxes = sorted(divididas, key=lambda b: b[0])
 
     # Filtro final: descarta fragmentos que sobraram (muito pequenos
     # ou desproporcionais demais para serem uma letra)
