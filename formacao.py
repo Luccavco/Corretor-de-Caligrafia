@@ -209,7 +209,7 @@ def avaliar_formacao(mascara_norm, letra):
         esp = medir_espessura(mascara_norm)
         return {"formacao": esp, "medidas": {"iou": 0.0, "tracos": 0.0, "proporcao": 0.0,
                                              "inclinacao": 0.0, "espessura": esp},
-                "pior": "iou"}
+                "pior": "iou", "molde_indice": None}
     ious = [medir_iou(mascara_norm, m) for m in moldes]
     melhor = int(np.argmax(ious))
     molde = moldes[melhor]
@@ -223,4 +223,4 @@ def avaliar_formacao(mascara_norm, letra):
     formacao = sum(PESOS[k] * medidas[k] for k in PESOS)
     pior = min(medidas, key=lambda k: medidas[k])
     return {"formacao": float(formacao), "medidas": {k: float(v) for k, v in medidas.items()},
-            "pior": pior}
+            "pior": pior, "molde_indice": melhor}

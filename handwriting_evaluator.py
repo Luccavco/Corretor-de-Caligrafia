@@ -122,6 +122,7 @@ def avaliar_texto(characters, alvos=None, batch_size=32):
             "formacao": round(form["formacao"], 3),
             "medidas": form["medidas"],
             "pior_medida": form["pior"],
+            "molde_indice": form["molde_indice"],
         })
 
     return {

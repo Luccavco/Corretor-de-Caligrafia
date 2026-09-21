@@ -9,6 +9,8 @@
 import os
 import re
 import random
+
+import cv2
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel,
     QFileDialog, QTabWidget, QProgressBar, QSizePolicy, QFrame,
@@ -16,7 +18,7 @@ from PyQt5.QtWidgets import (
     QLineEdit, QListWidget, QListWidgetItem, QMessageBox
 )
 from PyQt5.QtGui import (
-    QPixmap, QCursor, QRegExpValidator, QPainter, QColor
+    QPixmap, QCursor, QRegExpValidator, QPainter, QColor, QImage
 )
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QRegExp
 
@@ -101,7 +103,7 @@ NOTA_MINIMA_PIOR = 40    # numa palavra, nenhuma letra pode ficar abaixo disto
 
 
 class VerificarWorker(QThread):
-    finished = pyqtSignal(str, object)
+    finished = pyqtSignal(str, object, object)   # texto, avaliacao, mapa BGR
     error = pyqtSignal(str)
 
     def __init__(self, image_path, alvo="", apagar_ao_fim=False):
@@ -121,7 +123,12 @@ class VerificarWorker(QThread):
             # numero de letras segmentadas bate com o esperado
             alvos = list(self.alvo) if len(self.alvo) == len(characters) else None
             avaliacao = avaliar_texto(characters, alvos=alvos)
-            self.finished.emit(texto, avaliacao)
+            # Mapa verde/vermelho/azul da letra contra o molde, para o
+            # usuario ver onde o traco saiu do esperado
+            from feedback_visual import mapa_diferencas
+            from image_pipeline import load_image
+            mapa = mapa_diferencas(characters, avaliacao, load_image(self.image_path).shape[:2])
+            self.finished.emit(texto, avaliacao, mapa)
         except Exception as e:
             self.error.emit(str(e))
         finally:
@@ -436,6 +443,27 @@ class PainelExercicio(QWidget):
         self.stack_envio.setCurrentIndex(0)
         envio_layout.addWidget(self.stack_envio, 1)
 
+        # Legenda do mapa de diferencas + volta ao quadro (so aparecem
+        # depois de uma verificacao)
+        self.linha_mapa = QWidget()
+        self.linha_mapa.setObjectName("transparente")
+        lay_mapa = QHBoxLayout(self.linha_mapa)
+        lay_mapa.setContentsMargins(0, 0, 0, 0)
+        legenda = QLabel(
+            f"<span style='color:{C_GOOD}'>&#9632;</span> no molde&nbsp;&nbsp; "
+            f"<span style='color:{C_BAD}'>&#9632;</span> fora do molde&nbsp;&nbsp; "
+            f"<span style='color:#9ec8ff'>&#9632;</span> faltou traço"
+        )
+        legenda.setStyleSheet(f"color: {C_MUTED}; font-size: 12px; border: none;")
+        lay_mapa.addWidget(legenda)
+        lay_mapa.addStretch()
+        self.btn_voltar_quadro = QPushButton("Voltar ao quadro")
+        self.btn_voltar_quadro.setObjectName("ghost")
+        self.btn_voltar_quadro.clicked.connect(self._voltar_ao_quadro)
+        lay_mapa.addWidget(self.btn_voltar_quadro)
+        self.linha_mapa.setVisible(False)
+        envio_layout.addWidget(self.linha_mapa)
+
         self.label_feedback = QLabel()
         self.label_feedback.setAlignment(Qt.AlignCenter)
         self.label_feedback.setStyleSheet(
@@ -501,6 +529,7 @@ class PainelExercicio(QWidget):
         self.canvas.limpar()
         self.canvas.definir_guia(alvo_atual)
         self.stack_envio.setCurrentIndex(0)
+        self.linha_mapa.setVisible(False)
         self.label_imagem.clear()
         self.label_imagem.setText("Fotografe sua tentativa\ne carregue aqui")
         self.label_imagem.setStyleSheet(
@@ -588,8 +617,9 @@ class PainelExercicio(QWidget):
 
     def enviar_tentativa(self):
         """Envia o que estiver no quadro de desenho para verificação."""
-        # Garante que o quadro esteja visivel (caso viesse de uma foto)
+        # Garante que o quadro esteja visivel (caso viesse de uma foto ou do mapa)
         self.stack_envio.setCurrentIndex(0)
+        self.linha_mapa.setVisible(False)
         if self.canvas.esta_vazio():
             self.label_feedback.setText("Escreva a resposta no quadro antes de enviar.")
             self.label_feedback.setStyleSheet(
@@ -634,11 +664,36 @@ class PainelExercicio(QWidget):
         self.worker.error.connect(self.on_erro)
         self.worker.start()
 
-    def on_verificado(self, texto, avaliacao):
+    def _mostrar_mapa(self, mapa):
+        """Exibe o mapa de diferencas (BGR) no lugar do quadro."""
+        if mapa is None:
+            return
+        rgb = cv2.cvtColor(mapa, cv2.COLOR_BGR2RGB)
+        h, w, _ = rgb.shape
+        qimg = QImage(rgb.data, w, h, 3 * w, QImage.Format_RGB888).copy()
+        pixmap = QPixmap.fromImage(qimg).scaled(
+            self.label_imagem.width() - 12, self.label_imagem.height() - 12,
+            Qt.KeepAspectRatio, Qt.SmoothTransformation,
+        )
+        self.label_imagem.setPixmap(pixmap)
+        self.label_imagem.setStyleSheet(
+            f"background-color: #ffffff; border: 1px solid {C_BORDER};"
+            f" border-radius: 10px;"
+        )
+        self.stack_envio.setCurrentIndex(1)
+        self.linha_mapa.setVisible(True)
+
+    def _voltar_ao_quadro(self):
+        """Sai do mapa e volta ao quadro (mantendo o desenho) para corrigir."""
+        self.stack_envio.setCurrentIndex(0)
+        self.linha_mapa.setVisible(False)
+
+    def on_verificado(self, texto, avaliacao, mapa=None):
         self.progress.setVisible(False)
         self.btn_enviar.setEnabled(True)
         self.btn_foto.setEnabled(True)
         self.btn_pular.setEnabled(True)
+        self._mostrar_mapa(mapa)
         alvo = self.alvos[0] if self.modo == "letra" else self.alvos[self.indice]
         acertou, motivo = self._validar(alvo, texto, avaliacao)
         if acertou:
