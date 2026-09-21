@@ -103,7 +103,7 @@ NOTA_MINIMA_PIOR = 40    # numa palavra, nenhuma letra pode ficar abaixo disto
 
 
 class VerificarWorker(QThread):
-    finished = pyqtSignal(str, object, object)   # texto, avaliacao, mapa BGR
+    finished = pyqtSignal(str, object, object, bool)   # texto, avaliacao, mapa, offline
     error = pyqtSignal(str)
 
     def __init__(self, image_path, alvo="", apagar_ao_fim=False):
@@ -116,19 +116,28 @@ class VerificarWorker(QThread):
 
     def run(self):
         try:
-            from htr_google import predict_from_path
-            texto = predict_from_path(self.image_path)
-            _, characters, _ = process(self.image_path)
+            _, characters, linhas = process(self.image_path)
             # A letra-alvo entra na nota (legibilidade e molde); so quando o
             # numero de letras segmentadas bate com o esperado
             alvos = list(self.alvo) if len(self.alvo) == len(characters) else None
             avaliacao = avaliar_texto(characters, alvos=alvos)
+
+            # Transcricao: Google Vision quando disponivel; sem internet ou
+            # sem credenciais, cai para o reconhecimento local e avisa.
+            offline = False
+            try:
+                from htr_google import predict_from_path
+                texto = predict_from_path(self.image_path)
+            except Exception:
+                offline = True
+                texto = self._transcrever_offline(characters, avaliacao, linhas)
+
             # Mapa verde/vermelho/azul da letra contra o molde, para o
             # usuario ver onde o traco saiu do esperado
             from feedback_visual import mapa_diferencas
             from image_pipeline import load_image
             mapa = mapa_diferencas(characters, avaliacao, load_image(self.image_path).shape[:2])
-            self.finished.emit(texto, avaliacao, mapa)
+            self.finished.emit(texto, avaliacao, mapa, offline)
         except Exception as e:
             self.error.emit(str(e))
         finally:
@@ -137,6 +146,15 @@ class VerificarWorker(QThread):
                     os.remove(self.image_path)
                 except OSError:
                     pass
+
+    def _transcrever_offline(self, characters, avaliacao, linhas):
+        """Reconhecimento sem internet: para uma letra, a propria CNN do
+        avaliador (classificador de 26 letras); para palavras, o TrOCR
+        local linha a linha."""
+        if len(self.alvo) <= 1 and avaliacao and avaliacao["total"] >= 1:
+            return "".join(r["letra_prevista"] for r in avaliacao["caracteres"])
+        from htr_engine import predict
+        return " ".join(predict(linha).strip() for linha in linhas)
 
 
 class LetraCard(QFrame):
@@ -465,6 +483,18 @@ class PainelExercicio(QWidget):
         self.linha_mapa.setVisible(False)
         envio_layout.addWidget(self.linha_mapa)
 
+        self.label_offline = QLabel(
+            "Sem conexão com o Google Vision: reconhecimento feito localmente "
+            "(CNN para letras, TrOCR para palavras)."
+        )
+        self.label_offline.setAlignment(Qt.AlignCenter)
+        self.label_offline.setWordWrap(True)
+        self.label_offline.setStyleSheet(
+            f"color: {C_OK}; font-size: 12px; border: none; padding: 2px;"
+        )
+        self.label_offline.setVisible(False)
+        envio_layout.addWidget(self.label_offline)
+
         self.label_feedback = QLabel()
         self.label_feedback.setAlignment(Qt.AlignCenter)
         self.label_feedback.setStyleSheet(
@@ -689,12 +719,13 @@ class PainelExercicio(QWidget):
         self.stack_envio.setCurrentIndex(0)
         self.linha_mapa.setVisible(False)
 
-    def on_verificado(self, texto, avaliacao, mapa=None):
+    def on_verificado(self, texto, avaliacao, mapa=None, offline=False):
         self.progress.setVisible(False)
         self.btn_enviar.setEnabled(True)
         self.btn_foto.setEnabled(True)
         self.btn_pular.setEnabled(True)
         self._mostrar_mapa(mapa)
+        self.label_offline.setVisible(offline)
         alvo = self.alvos[0] if self.modo == "letra" else self.alvos[self.indice]
         acertou, motivo = self._validar(alvo, texto, avaliacao)
         # Historico de evolucao: uma entrada por letra avaliada, acertando ou nao

@@ -42,7 +42,13 @@ class AnaliseWorker(QThread):
         try:
             if self.motor == "google":
                 from htr_google import predict_detailed
-                texto, simbolos = predict_detailed(self.image_path)
+                try:
+                    texto, simbolos = predict_detailed(self.image_path)
+                except Exception as e:
+                    # Sem internet/credenciais: sinaliza para a interface
+                    # oferecer o motor offline em vez de so mostrar o erro
+                    self.error.emit(f"__OFFLINE__{e}")
+                    return
                 boxes = [(s["x"], s["y"], s["w"], s["h"]) for s in simbolos]
                 characters = characters_from_boxes(self.image_path, boxes)
                 avaliacao = avaliar_texto(characters, alvos=[s["letra"] for s in simbolos])
@@ -527,6 +533,18 @@ class AnaliseWidget(QWidget):
         self.btn_analisar.setEnabled(True)
         self.btn_carregar.setEnabled(True)
         self.combo_motor.setEnabled(True)
+
+        if mensagem.startswith("__OFFLINE__"):
+            self.texto_resultado.setText(
+                "Não foi possível usar o Google Vision (sem internet ou sem "
+                "credenciais). Selecionando o motor offline (TrOCR) — ele "
+                "transcreve uma palavra por vez.\n\nDetalhe: "
+                + mensagem[len("__OFFLINE__"):]
+            )
+            idx = self.combo_motor.findData("trocr")
+            if idx >= 0:
+                self.combo_motor.setCurrentIndex(idx)
+            return
 
         if mensagem == "__SENTENCA__":
             self.texto_resultado.clear()

@@ -80,7 +80,7 @@ O aplicativo depende de dois serviços externos, cujas credenciais **não** fica
 - **Google Cloud Vision**: coloque o arquivo de credenciais da conta de serviço como `google_credentials.json` na raiz do projeto.
 - **Firebase**: coloque a chave de admin do Firestore como `firebase_credentials.json` na raiz do projeto. A chave pública (apiKey) do login já está em `firebase_config.py`.
 
-Sem esses arquivos, o app abre, mas a transcrição online e o login não funcionam.
+Sem esses arquivos, o app abre, mas o login não funciona. Sem o Google Vision (ou sem internet), o exercício e a análise passam automaticamente para o reconhecimento local (CNN para letras isoladas, TrOCR para palavras), com aviso na tela.
 
 ---
 
