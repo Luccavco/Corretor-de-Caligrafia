@@ -631,15 +631,26 @@ class PreCarregador(QThread):
     continua acontecendo sob demanda, como antes)."""
 
     def run(self):
-        try:
-            import cv2          # noqa: F401
-            import torch        # noqa: F401
-            import transformers  # noqa: F401
-        except Exception:
-            # Se algo falhar aqui, nao tem problema: os imports normais
-            # (mais lentos) acontecem de qualquer forma quando a pessoa
-            # abrir Praticar ou Analise
-            pass
+        # Cada import fica em seu proprio try: se um faltar (ex.: credenciais
+        # do Google ausentes), os outros continuam sendo pre-carregados.
+        # A ordem segue a do primeiro uso: torchvision e o que o clique em
+        # Praticar/Analise importa; os motores de HTR vem na primeira analise.
+        def tentar(fn):
+            try:
+                fn()
+            except Exception:
+                pass
+
+        tentar(lambda: __import__("cv2"))
+        tentar(lambda: __import__("torch"))
+        tentar(lambda: __import__("torchvision"))
+        tentar(lambda: __import__("handwriting_evaluator"))
+        tentar(lambda: __import__("transformers"))
+        tentar(lambda: __import__("google.cloud.vision"))
+
+        def classes_trocr():
+            from transformers import TrOCRProcessor, VisionEncoderDecoderModel  # noqa: F401
+        tentar(classes_trocr)
 
 
 if __name__ == "__main__":
