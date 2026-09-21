@@ -60,7 +60,7 @@
   - `localizar_fonte(nome: str) -> str | None` — caminho .ttf via `fc-match`, fallback glob
   - `FONTES_MOLDE = ["DejaVu Sans", "Liberation Sans", "Noto Sans", "Noto Serif"]`
 
-- [ ] **Step 1: Escrever o teste que falha**
+- [x] **Step 1: Escrever o teste que falha**
 
 ```python
 # test_letra_prep.py
@@ -129,12 +129,12 @@ if __name__ == "__main__":
     sys.exit(1 if falhas else 0)
 ```
 
-- [ ] **Step 2: Rodar e confirmar que falha**
+- [x] **Step 2: Rodar e confirmar que falha**
 
 Run: `venv/bin/python test_letra_prep.py`
 Expected: `ModuleNotFoundError: No module named 'letra_prep'`
 
-- [ ] **Step 3: Implementar `letra_prep.py`**
+- [x] **Step 3: Implementar `letra_prep.py`**
 
 ```python
 """Normalizacao de letras compartilhada entre treino e inferencia.
@@ -241,12 +241,12 @@ def localizar_fonte(nome):
     return None
 ```
 
-- [ ] **Step 4: Rodar e confirmar que passa**
+- [x] **Step 4: Rodar e confirmar que passa**
 
 Run: `venv/bin/python test_letra_prep.py`
 Expected: 6 linhas `ok`, exit 0.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add letra_prep.py test_letra_prep.py
@@ -272,7 +272,7 @@ git commit -m "Adiciona letra_prep: normalizacao de letras compartilhada entre t
   - `avaliar_formacao(mascara_norm, letra) -> dict` com `formacao` (0–1) e `medidas` = `{"iou", "proporcao", "inclinacao", "espessura"}` (cada 0–1) e `pior` (nome da pior medida)
   - Constantes: `PESOS = {"iou": 0.45, "proporcao": 0.20, "inclinacao": 0.15, "espessura": 0.20}`, `IOU_BOM = 0.70`, `TOL_PIXELS = 3`
 
-- [ ] **Step 1: Escrever o teste que falha**
+- [x] **Step 1: Escrever o teste que falha**
 
 ```python
 # test_formacao.py
@@ -354,12 +354,12 @@ if __name__ == "__main__":
     sys.exit(1 if falhas else 0)
 ```
 
-- [ ] **Step 2: Rodar e confirmar que falha**
+- [x] **Step 2: Rodar e confirmar que falha**
 
 Run: `venv/bin/python test_formacao.py`
 Expected: `ModuleNotFoundError: No module named 'formacao'`
 
-- [ ] **Step 3: Implementar `formacao.py`**
+- [x] **Step 3: Implementar `formacao.py`**
 
 ```python
 """Parcela geometrica da nota: compara a letra desenhada com moldes de
@@ -511,12 +511,12 @@ def avaliar_formacao(mascara_norm, letra):
             "pior": pior}
 ```
 
-- [ ] **Step 4: Rodar e confirmar que passa**
+- [x] **Step 4: Rodar e confirmar que passa**
 
 Run: `venv/bin/python test_formacao.py`
 Expected: 5 linhas `ok`. Se `test_espessura_regular_vs_irregular` ou `test_avaliar_formacao_ordena_casos` falhar por margem pequena, ajustar apenas as constantes `*_TOL/*_ZERO` (não a lógica) e anotar o valor final no commit.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add formacao.py test_formacao.py
@@ -536,7 +536,7 @@ git commit -m "Adiciona formacao.py: medidas geometricas contra moldes de letra 
 - Produces: arquivo `modelo_caligrafia.pth` = `torch.save({"state_dict", "temperatura": float, "classes": "ABCDEFGHIJKLMNOPQRSTUVWXYZ", "tamanho": 96, "acuracia_val": float})`
 - Função `construir_modelo() -> nn.Module` (MobileNetV2 com 26 saídas) — reutilizada pelo avaliador
 
-- [ ] **Step 1: Escrever o teste de fumaça (dataset + augmentation) que falha**
+- [x] **Step 1: Escrever o teste de fumaça (dataset + augmentation) que falha**
 
 Adicionar ao final de `test_letra_prep.py`, antes do `if __name__`:
 
@@ -550,12 +550,12 @@ def test_dataset_emnist_augmentado():
     assert len(ds) == 64
 ```
 
-- [ ] **Step 2: Rodar e confirmar que falha**
+- [x] **Step 2: Rodar e confirmar que falha**
 
 Run: `venv/bin/python test_letra_prep.py`
 Expected: `FALHA test_dataset_emnist_augmentado: AttributeError ... 'DatasetLetras'` (ou ImportError)
 
-- [ ] **Step 3: Reescrever `train_cnn.py`**
+- [x] **Step 3: Reescrever `train_cnn.py`**
 
 ```python
 """Treina a CNN de LEGIBILIDADE: MobileNetV2 (transfer learning) que
@@ -724,17 +724,17 @@ if __name__ == "__main__":
     treinar()
 ```
 
-- [ ] **Step 4: Rodar o teste de fumaça**
+- [x] **Step 4: Rodar o teste de fumaça**
 
 Run: `venv/bin/python test_letra_prep.py`
 Expected: todas `ok` (inclusive `test_dataset_emnist_augmentado`).
 
-- [ ] **Step 5: Treinar (GPU, ~20–40 min) em segundo plano e acompanhar**
+- [x] **Step 5: Treinar (GPU, ~20–40 min) em segundo plano e acompanhar**
 
 Run: `venv/bin/python train_cnn.py 2>&1 | tee /tmp/treino.log`
 Expected: acurácia de validação subindo por época; final ≥ 90 % (EMNIST letters costuma dar 93–95 %). Temperatura tipicamente entre 0,8 e 2,0. Se a GPU estourar memória (4 GB), reduzir `BATCH` para 64.
 
-- [ ] **Step 6: Remover o diagnóstico antigo e commitar**
+- [x] **Step 6: Remover o diagnóstico antigo e commitar**
 
 ```bash
 git rm diagnostico_variancia.py
