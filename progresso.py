@@ -38,7 +38,9 @@ ESTADO_PADRAO = {
     "meta_diaria": 5,               # exercicios por dia que o usuario busca
     "feitos_hoje": 0,              # exercicios feitos na data de hoje
     "data_feitos_hoje": "",       # data a que 'feitos_hoje' se refere
+    "historico": [],              # tentativas: {"d": data, "l": letra, "n": nota}
 }
+HISTORICO_MAXIMO = 600            # tentativas guardadas (as mais antigas saem)
 
 
 def _estado_novo():
@@ -48,6 +50,7 @@ def _estado_novo():
     estado["palavras_customizadas"] = []
     estado["ultima_pratica_letra"] = {}
     estado["conquistas"] = []
+    estado["historico"] = []
     return estado
 
 
@@ -80,6 +83,7 @@ def carregar(uid):
             "ultima_pratica_letra": dados.get("ultima_pratica_letra", {}),
             "conquistas": dados.get("conquistas", []),
             "meta_diaria": dados.get("meta_diaria", 5),
+            "historico": dados.get("historico", []),
             "feitos_hoje": dados.get("feitos_hoje", 0),
             "data_feitos_hoje": dados.get("data_feitos_hoje", ""),
         }
@@ -270,6 +274,45 @@ def registrar_acerto_letra(uid, estado, letra, estilo="forma"):
     novas = _verificar_conquistas(estado)
     _salvar(uid, estado)
     return novas
+
+
+def registrar_tentativa(uid, estado, letra, nota):
+    """Guarda a nota de UMA tentativa (acerto ou nao) no historico, para o
+    grafico de evolucao. Mantem so as HISTORICO_MAXIMO mais recentes."""
+    hist = estado.setdefault("historico", [])
+    hist.append({"d": date.today().isoformat(), "l": letra, "n": round(float(nota), 1)})
+    if len(hist) > HISTORICO_MAXIMO:
+        del hist[:len(hist) - HISTORICO_MAXIMO]
+    _salvar(uid, estado)
+
+
+def evolucao_diaria(estado, dias=30):
+    """Media da nota por dia nos ultimos `dias` (lista de (data, media, n)),
+    so para os dias com tentativas, em ordem cronologica."""
+    hist = estado.get("historico", [])
+    inicio = (date.today() - timedelta(days=dias - 1)).isoformat()
+    por_dia = {}
+    for t in hist:
+        if t.get("d", "") >= inicio:
+            por_dia.setdefault(t["d"], []).append(t["n"])
+    return [(d, sum(v) / len(v), len(v)) for d, v in sorted(por_dia.items())]
+
+
+def media_periodo(estado, dias, deslocamento=0):
+    """Media das notas no periodo [hoje - deslocamento - dias, hoje - deslocamento)."""
+    hist = estado.get("historico", [])
+    fim = date.today() - timedelta(days=deslocamento)
+    ini = fim - timedelta(days=dias - 1)
+    notas = [t["n"] for t in hist if ini.isoformat() <= t.get("d", "") <= fim.isoformat()]
+    return (sum(notas) / len(notas), len(notas)) if notas else (None, 0)
+
+
+def evolucao_por_letra(estado, ultimas=5):
+    """Media das ultimas `ultimas` notas de cada letra: {letra: (media, n)}."""
+    por_letra = {}
+    for t in estado.get("historico", []):
+        por_letra.setdefault(t["l"], []).append(t["n"])
+    return {l: (sum(v[-ultimas:]) / len(v[-ultimas:]), len(v)) for l, v in por_letra.items()}
 
 
 def registrar_fase_completa(uid, estado, fase):

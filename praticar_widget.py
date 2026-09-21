@@ -349,6 +349,7 @@ class GerenciarPalavrasDialog(QDialog):
 class PainelExercicio(QWidget):
     voltar = pyqtSignal()
     acerto = pyqtSignal(str)
+    tentativa = pyqtSignal(str, float)   # letra-alvo, nota (toda verificacao)
     finalizou = pyqtSignal()
 
     def __init__(self, titulo_alvo, alvos, modo, nivel_atual=None,
@@ -696,6 +697,11 @@ class PainelExercicio(QWidget):
         self._mostrar_mapa(mapa)
         alvo = self.alvos[0] if self.modo == "letra" else self.alvos[self.indice]
         acertou, motivo = self._validar(alvo, texto, avaliacao)
+        # Historico de evolucao: uma entrada por letra avaliada, acertando ou nao
+        if avaliacao:
+            for r in avaliacao["caracteres"]:
+                if r.get("letra_alvo"):
+                    self.tentativa.emit(r["letra_alvo"], float(r["nota"]))
         if acertou:
             self.acerto.emit(alvo)
             self.acertos += 1
@@ -1542,7 +1548,11 @@ class AbaProgresso(QWidget):
         topo.addLayout(stats_grid, 1)
         conteudo.addLayout(topo)
 
-        # ── LINHA 2: mapa de calor das letras ──
+        # ── LINHA 2: evolucao da nota ──
+        conteudo.addWidget(self._titulo_secao("EVOLUÇÃO DA NOTA"))
+        conteudo.addWidget(self._secao_evolucao())
+
+        # ── LINHA 3: mapa de calor das letras ──
         conteudo.addWidget(self._titulo_secao("DOMÍNIO DO ALFABETO"))
         legenda = QLabel(
             "Cada quadrado mostra o nível de domínio da letra "
@@ -1591,6 +1601,37 @@ class AbaProgresso(QWidget):
             f" background: transparent;"
         )
         lay.addWidget(lbl_rot)
+        return card
+
+    def _secao_evolucao(self):
+        """Grafico da media diaria (30 dias) + resumo semana atual x anterior."""
+        from grafico_evolucao import GraficoEvolucao
+        card, lay = make_card(None)
+        atual, n_atual = prog.media_periodo(self.estado, 7)
+        anterior, _ = prog.media_periodo(self.estado, 7, deslocamento=7)
+        if atual is None:
+            resumo = "Sua média dos últimos 7 dias aparece aqui depois das primeiras tentativas."
+        else:
+            resumo = f"Média dos últimos 7 dias: <b>{atual:.0f}</b> ({n_atual} tentativa(s))"
+            if anterior is not None:
+                delta = atual - anterior
+                cor = C_GOOD if delta >= 0 else C_BAD
+                resumo += f" · <span style='color:{cor}'>{delta:+.0f}</span> em relação à semana anterior"
+        lbl = QLabel(resumo)
+        lbl.setStyleSheet(f"color: {C_MUTED}; font-size: 13px; border: none;")
+        lay.addWidget(lbl)
+        lay.addWidget(GraficoEvolucao(prog.evolucao_diaria(self.estado, 30), dias=30))
+
+        # Letras com pior media recente: onde praticar
+        por_letra = prog.evolucao_por_letra(self.estado)
+        if por_letra:
+            piores = sorted(por_letra.items(), key=lambda kv: kv[1][0])[:3]
+            txt = "Letras para reforçar: " + "  ".join(
+                f"<b>{l}</b> ({m:.0f})" for l, (m, _n) in piores
+            )
+            lbl2 = QLabel(txt)
+            lbl2.setStyleSheet(f"color: {C_MUTED}; font-size: 12px; border: none;")
+            lay.addWidget(lbl2)
         return card
 
     def _titulo_secao(self, texto):
@@ -1728,9 +1769,13 @@ class PraticarWidget(QWidget):
             nivel_atual=self.estado["letras"].get(letra, 0),
         )
         self.painel_exercicio.voltar.connect(self._voltar_menu)
+        self.painel_exercicio.tentativa.connect(self._registrar_tentativa)
         self.painel_exercicio.acerto.connect(self._acertou_letra)
         self.stack.addWidget(self.painel_exercicio)
         self.stack.setCurrentWidget(self.painel_exercicio)
+
+    def _registrar_tentativa(self, letra, nota):
+        prog.registrar_tentativa(self.uid, self.estado, letra, nota)
 
     def _acertou_letra(self, letra):
         novas = prog.registrar_acerto_letra(self.uid, self.estado, letra)
@@ -1758,6 +1803,7 @@ class PraticarWidget(QWidget):
             modo="fase",
         )
         self.painel_exercicio.voltar.connect(self._voltar_menu)
+        self.painel_exercicio.tentativa.connect(self._registrar_tentativa)
         self.painel_exercicio.finalizou.connect(
             lambda i=indice: self._concluiu_fase(i)
         )
@@ -1775,6 +1821,7 @@ class PraticarWidget(QWidget):
             custom=True,
         )
         self.painel_exercicio.voltar.connect(self._voltar_menu)
+        self.painel_exercicio.tentativa.connect(self._registrar_tentativa)
         self.stack.addWidget(self.painel_exercicio)
         self.stack.setCurrentWidget(self.painel_exercicio)
 
@@ -1806,6 +1853,7 @@ class PraticarWidget(QWidget):
             tamanho_alvo=tamanho_alvo,
         )
         self.painel_exercicio.voltar.connect(self._voltar_menu)
+        self.painel_exercicio.tentativa.connect(self._registrar_tentativa)
         self.stack.addWidget(self.painel_exercicio)
         self.stack.setCurrentWidget(self.painel_exercicio)
 
