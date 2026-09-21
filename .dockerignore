@@ -1,0 +1,9 @@
+venv/
+data/
+test_images/
+dist/
+build/
+.git/
+*.log
+sessao.json
+firebase_credentials.json
