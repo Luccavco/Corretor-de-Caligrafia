@@ -1,0 +1,33 @@
+name: testes
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  testes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Fontes dos moldes (DejaVu, Liberation, Noto)
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq fontconfig fonts-dejavu-core fonts-liberation fonts-noto-core
+
+      - name: Dependências (torch CPU, sem CUDA)
+        run: |
+          python -m pip install --upgrade pip
+          pip install torch==2.11.0 torchvision==0.26.0 --index-url https://download.pytorch.org/whl/cpu
+          pip install opencv-python-headless numpy pillow
+
+      - name: test_letra_prep (sem o dataset EMNIST)
+        run: python test_letra_prep.py
+        env:
+          CI: "true"
+
+      - name: test_formacao
+        run: python test_formacao.py

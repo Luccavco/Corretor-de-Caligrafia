@@ -1,5 +1,7 @@
 # Calligraphos — Reconhecimento e Avaliação de Caligrafia
 
+[![testes](https://github.com/Luccavco/Corretor-de-Caligrafia/actions/workflows/testes.yml/badge.svg)](https://github.com/Luccavco/Corretor-de-Caligrafia/actions/workflows/testes.yml)
+
 Sistema de reconhecimento e avaliação de texto manuscrito desenvolvido como Trabalho de Conclusão de Curso (TCC).
 
 O Calligraphos tem dois objetivos centrais: **transcrever** texto escrito à mão (de uma palavra a uma redação com várias linhas) para texto digital, e **avaliar a qualidade da caligrafia** letra por letra, destacando quais estão bem formadas e quais precisam melhorar. Além da análise, o programa traz um modo de **prática guiada** com exercícios, progresso salvo, sequência diária e conquistas, para quem quer treinar e aperfeiçoar a própria letra.

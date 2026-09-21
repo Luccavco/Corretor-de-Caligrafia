@@ -52,6 +52,10 @@ def test_glifo_e_fonte():
 
 
 def test_dataset_emnist_augmentado():
+    import os
+    if os.environ.get("CI") and not os.path.isdir(os.path.join("data", "EMNIST")):
+        print("      (pulado: EMNIST não está disponível no CI)")
+        return
     import train_cnn as tc
     ds = tc.DatasetLetras(treino=True, limite=64)
     x, y = ds[0]
