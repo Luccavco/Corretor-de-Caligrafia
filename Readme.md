@@ -98,23 +98,24 @@ Erros e avisos ficam registrados em `calligraphos.log` (rotativo), útil para di
 
 ### Aplicativo
 ```
-python main_ui.py
+python -m calligraphos
 ```
+(`python main_ui.py` continua funcionando como atalho.)
 Faça login (ou crie uma conta), e use os dois modos principais:
 - **Analisar**: escreva no quadro ou carregue uma foto e veja a transcrição e a avaliação da caligrafia.
 - **Praticar**: treine letras e palavras, faça quizzes, consulte o dicionário e acompanhe seu progresso.
 
 ### Retreinar o modelo de avaliação
 ```
-python train_cnn.py
+python -m calligraphos.nucleo.train_cnn
 ```
 Baixa o dataset EMNIST (split *letters*, 26 classes) e treina a CNN de legibilidade com augmentation de espessura, rotação, escala e cisalhamento (para aproximar o EMNIST das letras reais). Ao final calibra a confiança (temperatura) e imprime a acurácia de validação. O modelo é salvo em `modelo_caligrafia.pth`.
 
 Testes do avaliador (letras sintéticas):
 ```
-python test_letra_prep.py
-python test_formacao.py
-python test_avaliador.py
+python tests/test_letra_prep.py
+python tests/test_formacao.py
+python tests/test_avaliador.py
 ```
 
 ---
@@ -134,40 +135,43 @@ npm run dev
 ## Estrutura do projeto
 
 ```
-├── main_ui.py                # Janela principal e fluxo do app (PyQt5)
-├── login_widget.py           # Tela de login/cadastro
-├── onboarding_widget.py      # Introdução na primeira execução
-├── analise_widget.py         # Modo Análise Individual
-├── praticar_widget.py        # Modo Praticar (letras, palavras, quiz, dicionário, progresso)
-├── config_widget.py          # Configurações
-├── canvas_desenho.py         # Quadro de desenho com letra-guia
-├── ui_helpers.py             # Utilitários de interface compartilhados
-├── ui_theme.py               # Cores e estilos
-├── config.py / config.json   # Ajustes (limiares, pesos, motor padrão)
-├── log_config.py             # Logging em calligraphos.log
-│
-├── image_pipeline.py         # Pré-processamento e segmentação (OpenCV)
-├── htr_google.py             # Transcrição via Google Cloud Vision
-├── htr_engine.py             # Transcrição via TrOCR (offline)
-├── letra_prep.py             # Normalização de letras (treino e inferência)
-├── formacao.py               # Medidas geométricas contra moldes de letra de forma
-├── handwriting_evaluator.py  # Nota por letra: legibilidade (CNN) + formação
-├── train_cnn.py              # Treino da CNN de legibilidade (EMNIST letters)
-├── test_letra_prep.py        # Testes: normalização
-├── test_formacao.py          # Testes: medidas geométricas
-├── test_avaliador.py         # Testes: avaliador ponta a ponta
-│
-├── auth_service.py           # Autenticação e sessão persistente
-├── firebase_config.py        # Configuração do Firebase
-├── progresso.py              # Progresso do usuário no Firestore
-├── dicionario_service.py     # Busca de definições
-│
-├── requirements.txt          # Dependências do projeto
-├── modelo_caligrafia.pth     # Modelo treinado (gerado pelo train_cnn.py)
-└── calligraphos-web/         # Site web complementar (React)
+├── calligraphos/                 # Pacote do aplicativo (python -m calligraphos)
+│   ├── __main__.py               # Ponto de entrada
+│   ├── caminhos.py               # Caminhos dos arquivos da raiz (modelo, config, credenciais)
+│   ├── config.py                 # Leitura do config.json (padrões embutidos)
+│   ├── log_config.py             # Logging em calligraphos.log
+│   ├── nucleo/                   # Visão computacional e avaliação
+│   │   ├── image_pipeline.py     #   Pré-processamento e segmentação (OpenCV)
+│   │   ├── letra_prep.py         #   Normalização de letras (treino e inferência)
+│   │   ├── formacao.py           #   Medidas geométricas contra moldes de letra de forma
+│   │   ├── feedback_visual.py    #   Mapa de diferenças letra × molde
+│   │   ├── handwriting_evaluator.py  # Nota por letra: legibilidade (CNN) + formação
+│   │   ├── modelo_cnn.py         #   Arquitetura da CNN (MobileNetV2, 26 classes)
+│   │   ├── train_cnn.py          #   Treino da CNN (python -m calligraphos.nucleo.train_cnn)
+│   │   ├── htr_google.py         #   Transcrição via Google Cloud Vision
+│   │   └── htr_engine.py         #   Transcrição via TrOCR (offline)
+│   ├── nuvem/                    # Conta e dados
+│   │   ├── firebase_config.py    #   Configuração do Firebase
+│   │   ├── auth_service.py       #   Autenticação e sessão persistente
+│   │   ├── progresso.py          #   Progresso e histórico do usuário no Firestore
+│   │   └── dicionario_service.py #   Busca de definições
+│   └── ui/                       # Interface (PyQt5)
+│       ├── main_ui.py            #   Janela principal, splash e fluxo do app
+│       ├── login_widget.py, onboarding_widget.py, config_widget.py
+│       ├── analise_widget.py     #   Modo Análise Individual
+│       ├── praticar_widget.py    #   Modo Praticar (letras, palavras, quiz, dicionário, progresso)
+│       ├── canvas_desenho.py     #   Quadro de desenho com letra-guia
+│       ├── detalhe_letra_dialog.py, sobre_dialog.py
+│       ├── anel_progresso.py, grafico_evolucao.py
+│       └── ui_helpers.py, ui_theme.py
+├── tests/                        # test_letra_prep, test_formacao, test_avaliador
+├── scripts/                      # gerar_figura2.py (artigo), testar_pipeline.py
+├── main_ui.py                    # Atalho de compatibilidade (chama o pacote)
+├── config.json                   # Ajustes (limiares, pesos, motor padrão)
+├── requirements.txt / pyproject.toml
+├── modelo_caligrafia.pth         # Modelo treinado (gerado pelo train_cnn)
+└── calligraphos-web/             # Site web complementar (React)
 ```
-
----
 
 ## Detalhes técnicos
 

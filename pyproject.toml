@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "calligraphos"
+version = "1.0.0"
+description = "Reconhecimento e avaliação de caligrafia em letra de forma (TCC)"
+readme = "Readme.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Lucca Vasconcelos Costa" }]
+dynamic = ["dependencies"]
+
+[project.scripts]
+calligraphos = "calligraphos.ui.main_ui:main"
+
+[tool.setuptools]
+packages = ["calligraphos", "calligraphos.nucleo", "calligraphos.nuvem", "calligraphos.ui"]
+
+[tool.setuptools.dynamic]
+dependencies = { file = ["requirements.txt"] }

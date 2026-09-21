@@ -25,9 +25,9 @@ jobs:
           pip install opencv-python-headless numpy pillow
 
       - name: test_letra_prep (sem o dataset EMNIST)
-        run: python test_letra_prep.py
+        run: python tests/test_letra_prep.py
         env:
           CI: "true"
 
       - name: test_formacao
-        run: python test_formacao.py
+        run: python tests/test_formacao.py
