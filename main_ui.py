@@ -79,7 +79,7 @@ class ModoCard(QFrame):
         super().__init__()
         self.on_click = on_click
         self.setCursor(QCursor(Qt.PointingHandCursor))
-        self.setFixedSize(370, 410)
+        self.setFixedSize(360, 360)
         self.setStyleSheet(
             f"QFrame {{ background-color: {C_PANEL};"
             f" border: 1px solid {C_BORDER}; border-radius: 20px; }}"
@@ -134,17 +134,19 @@ class TelaInicial(QWidget):
 
         # Topo: idioma a esquerda, email + configuracoes a direita
         topo = QHBoxLayout()
+        topo.setSpacing(10)
         lbl_idioma = QLabel("Idioma:")
         lbl_idioma.setStyleSheet(f"color: {C_MUTED}; font-size: 13px;")
         combo_idioma = QComboBox()
-        combo_idioma.addItem("Portugues (BR)")
-        combo_idioma.setToolTip("Outros idiomas serao adicionados futuramente")
+        combo_idioma.addItem("Português (BR)")
+        combo_idioma.setToolTip("Outros idiomas serão adicionados futuramente")
         topo.addWidget(lbl_idioma)
         topo.addWidget(combo_idioma)
         topo.addStretch()
         lbl_email = QLabel(email)
         lbl_email.setStyleSheet(f"color: {C_MUTED}; font-size: 13px;")
         topo.addWidget(lbl_email)
+        topo.addSpacing(6)
         btn_config = QPushButton("Configuracoes")
         btn_config.setObjectName("ghost")
         btn_config.clicked.connect(ir_para_config)

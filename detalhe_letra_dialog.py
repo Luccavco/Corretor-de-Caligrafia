@@ -12,7 +12,7 @@ from PyQt5.QtGui import QRegExpValidator
 
 from ui_theme import (
     C_BG, C_PANEL, C_CARD, C_TEXT, C_MUTED, C_BORDER, C_ACCENT,
-    C_GOOD, C_OK, C_BAD,
+    C_GOOD, C_OK, C_BAD, com_alpha,
 )
 
 
@@ -130,7 +130,7 @@ class DetalheLetraDialog(QDialog):
         return card
 
     def _card_nao_identificada(self):
-        card, lay = self._make_card("LETRA NAO IDENTIFICADA", cor_borda=f"{C_BAD}55")
+        card, lay = self._make_card("LETRA NAO IDENTIFICADA", cor_borda=f"{com_alpha(C_BAD, 0x55)}")
         aviso = QLabel(
             "O programa nao conseguiu identificar essa letra automaticamente. "
             "Verifique se a imagem esta com boa iluminacao, foco e contraste. "

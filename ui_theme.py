@@ -11,6 +11,16 @@ C_GOOD = "#4caf7d"
 C_OK = "#e0a83a"
 C_BAD = "#e05a5a"
 
+
+def com_alpha(cor, alpha):
+    """Devolve a cor com transparencia no formato que o Qt entende.
+
+    Folhas de estilo do Qt leem cores de 8 digitos como #AARRGGBB (alpha
+    primeiro), diferente da web (#RRGGBBAA). Escrever f"{cor}22" gerava
+    uma cor totalmente diferente da pretendida. `alpha` vai de 0 a 255.
+    """
+    return f"#{alpha:02x}{cor.lstrip('#')}"
+
 STYLE = f"""
 QMainWindow, QWidget#root {{ background-color: {C_BG}; }}
 QWidget {{ color: {C_TEXT}; font-family: 'Segoe UI', 'Noto Sans', sans-serif; }}
@@ -77,6 +87,7 @@ QProgressBar {{
 QProgressBar::chunk {{ background-color: {C_ACCENT}; border-radius: 3px; }}
 
 QScrollArea {{ border: none; background: transparent; }}
+QWidget#transparente {{ background: transparent; border: none; }}
 QScrollBar:vertical {{
     background: {C_PANEL}; width: 8px; border-radius: 4px;
 }}
@@ -88,26 +99,30 @@ QScrollBar::add-line, QScrollBar::sub-line {{ height: 0; }}
 QTabWidget::pane {{
     border: 1px solid {C_BORDER};
     border-radius: 10px;
+    border-top-left-radius: 0;
     background-color: {C_PANEL};
     top: -1px;
 }}
 QTabBar::tab {{
     background-color: transparent;
     color: {C_MUTED};
-    padding: 18px 40px;
-    margin-right: 4px;
-    min-width: 140px;
+    padding: 12px 26px;
+    margin-right: 2px;
+    min-width: 110px;
+    border: 1px solid transparent;
+    border-bottom: none;
     border-top-left-radius: 8px;
     border-top-right-radius: 8px;
-    font-size: 18px;
+    font-size: 15px;
     font-weight: 600;
 }}
+QTabBar::tab:hover {{ color: {C_TEXT}; }}
 QTabBar::tab:selected {{
     color: {C_TEXT};
     background-color: {C_PANEL};
-    border: 1px solid {C_BORDER};
-    border-bottom: none;
+    border-color: {C_BORDER};
 }}
+QTabBar::tab:!selected {{ margin-top: 3px; }}
 """
 
 
@@ -136,7 +151,8 @@ def stat_chip(cor, texto):
     from PyQt5.QtWidgets import QLabel
     lbl = QLabel(texto)
     lbl.setStyleSheet(
-        f"background-color: {cor}22; color: {cor}; border: 1px solid {cor}55;"
+        f"background-color: {com_alpha(cor, 0x22)}; color: {cor};"
+        f" border: 1px solid {com_alpha(cor, 0x55)};"
         f" border-radius: 6px; padding: 4px 10px; font-size: 12px; font-weight: 600;"
     )
     return lbl

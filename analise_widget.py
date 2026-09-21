@@ -24,7 +24,7 @@ from handwriting_evaluator import avaliar_texto, gerar_relatorio
 
 from ui_theme import (
     C_CARD, C_TEXT, C_MUTED, C_BORDER, C_GOOD, C_OK, C_BAD, C_ACCENT,
-    make_card, stat_chip,
+    make_card, stat_chip, com_alpha,
 )
 from detalhe_letra_dialog import DetalheLetraDialog
 
@@ -80,8 +80,8 @@ class LetraChip(QLabel):
         self.setAlignment(Qt.AlignCenter)
         self.setCursor(QCursor(Qt.PointingHandCursor))
         self.setStyleSheet(
-            f"background-color: {cor}18; color: {cor};"
-            f" border: 1px solid {cor}45; border-radius: 6px;"
+            f"background-color: {com_alpha(cor, 0x18)}; color: {cor};"
+            f" border: 1px solid {com_alpha(cor, 0x45)}; border-radius: 6px;"
             f" padding: 6px 4px; font-size: 11px; font-weight: 600;"
         )
         if letra_reconhecida and letra_reconhecida != "?":
@@ -195,11 +195,14 @@ class AnaliseWidget(QWidget):
         titulo.setStyleSheet(f"font-size: 20px; font-weight: 800; color: {C_TEXT};")
         sub = QLabel("Carregue uma imagem para transcrever e avaliar a caligrafia")
         sub.setStyleSheet(f"color: {C_MUTED}; font-size: 14px;")
+        # O subtitulo pode encolher (e ser cortado) em janelas estreitas,
+        # em vez de forcar a largura minima da tela inteira
+        sub.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Preferred)
         header.addSpacing(10)
         header.addWidget(titulo)
         header.addSpacing(12)
-        header.addWidget(sub)
-        header.addStretch()
+        header.addWidget(sub, 1)
+        header.addSpacing(12)
 
         lbl_motor = QLabel("Motor de HTR:")
         lbl_motor.setStyleSheet(f"color: {C_MUTED}; font-size: 13px;")
@@ -227,7 +230,7 @@ class AnaliseWidget(QWidget):
 
         self.label_imagem = ImagemClicavel()
         self.label_imagem.setAlignment(Qt.AlignCenter)
-        self.label_imagem.setMinimumSize(480, 420)
+        self.label_imagem.setMinimumSize(420, 360)
         self.label_imagem.setText(
             "Arraste uma imagem aqui\nou clique em Carregar Imagem"
         )
@@ -365,7 +368,7 @@ class AnaliseWidget(QWidget):
         self.scroll_detalhe = QScrollArea()
         self.scroll_detalhe.setWidgetResizable(True)
         self.detalhe_container = QWidget()
-        self.detalhe_container.setStyleSheet("background: transparent; border: none;")
+        self.detalhe_container.setObjectName("transparente")
         self.detalhe_grid = QGridLayout(self.detalhe_container)
         self.detalhe_grid.setSpacing(6)
         self.detalhe_grid.setAlignment(Qt.AlignTop)
@@ -705,8 +708,8 @@ class AnaliseWidget(QWidget):
             chip.setAlignment(Qt.AlignCenter)
             chip.setCursor(QCursor(Qt.PointingHandCursor))
             chip.setStyleSheet(
-                f"background-color: {cor}18; color: {cor};"
-                f" border: 1px solid {cor}45; border-radius: 6px;"
+                f"background-color: {com_alpha(cor, 0x18)}; color: {cor};"
+                f" border: 1px solid {com_alpha(cor, 0x45)}; border-radius: 6px;"
                 f" padding: 6px 4px; font-size: 11px; font-weight: 600;"
             )
             chip.setToolTip(f"Letra manual: {letra}")
@@ -853,7 +856,7 @@ class AnaliseWidget(QWidget):
         self.btn_toggle_adicionar.setChecked(True)
         self.btn_toggle_adicionar.setText("Cancelar adicao")
         self.btn_toggle_adicionar.setStyleSheet(
-            f"QPushButton {{ background-color: {C_ACCENT}18; color: {C_ACCENT};"
+            f"QPushButton {{ background-color: {com_alpha(C_ACCENT, 0x18)}; color: {C_ACCENT};"
             f" border: 1px solid {C_ACCENT}; border-radius: 8px;"
             f" padding: 6px 12px; font-size: 12px; font-weight: 600; }}"
         )
@@ -870,7 +873,7 @@ class AnaliseWidget(QWidget):
         self.btn_toggle_remover.setChecked(True)
         self.btn_toggle_remover.setText("Cancelar remocao")
         self.btn_toggle_remover.setStyleSheet(
-            f"QPushButton {{ background-color: {C_BAD}18; color: {C_BAD};"
+            f"QPushButton {{ background-color: {com_alpha(C_BAD, 0x18)}; color: {C_BAD};"
             f" border: 1px solid {C_BAD}; border-radius: 8px;"
             f" padding: 6px 12px; font-size: 12px; font-weight: 600; }}"
         )
@@ -1141,7 +1144,7 @@ class DetalheExpandidoDialog(QDialog):
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         container = QWidget()
-        container.setStyleSheet("background: transparent; border: none;")
+        container.setObjectName("transparente")
         grid = QGridLayout(container)
         grid.setSpacing(8)
         grid.setAlignment(Qt.AlignTop)
@@ -1164,8 +1167,8 @@ class DetalheExpandidoDialog(QDialog):
             chip = QLabel(f"{info['letra']}  manual")
             chip.setAlignment(Qt.AlignCenter)
             chip.setStyleSheet(
-                f"background-color: {C_ACCENT}18; color: {C_ACCENT};"
-                f" border: 1px solid {C_ACCENT}45; border-radius: 6px;"
+                f"background-color: {com_alpha(C_ACCENT, 0x18)}; color: {C_ACCENT};"
+                f" border: 1px solid {com_alpha(C_ACCENT, 0x45)}; border-radius: 6px;"
                 f" padding: 8px 4px; font-size: 12px; font-weight: 600;"
             )
             chips.append(chip)

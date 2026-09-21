@@ -22,10 +22,10 @@ from PyQt5.QtCore import Qt, QThread, pyqtSignal, QRegExp
 
 from image_pipeline import process
 from handwriting_evaluator import avaliar_texto
-from ui_helpers import limpar_layout, cabecalho_aba
+from ui_helpers import limpar_layout, cabecalho_aba, FlowLayout
 from ui_theme import (
     C_BG, C_CARD, C_PANEL, C_TEXT, C_MUTED, C_BORDER, C_ACCENT,
-    C_GOOD, C_OK, C_BAD, make_card,
+    C_GOOD, C_OK, C_BAD, make_card, com_alpha,
 )
 import progresso as prog
 
@@ -173,7 +173,7 @@ class FaseCard(QFrame):
         super().__init__()
         self.indice = indice
         self.desbloqueada = desbloqueada
-        self.setFixedSize(300, 300)
+        self.setFixedSize(250, 250)
         if custom:
             cor_borda = C_ACCENT
         else:
@@ -188,7 +188,7 @@ class FaseCard(QFrame):
             self.setCursor(QCursor(Qt.PointingHandCursor))
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(24, 22, 24, 22)
+        layout.setContentsMargins(20, 18, 20, 18)
         layout.setSpacing(12)
 
         topo = QHBoxLayout()
@@ -217,13 +217,13 @@ class FaseCard(QFrame):
         lbl_nome = QLabel(nome)
         lbl_nome.setWordWrap(True)
         lbl_nome.setStyleSheet(
-            f"color: {C_TEXT}; font-size: 26px; font-weight: 800; border: none;"
+            f"color: {C_TEXT}; font-size: 22px; font-weight: 800; border: none;"
         )
         layout.addWidget(lbl_nome)
 
         desc = QLabel(descricao)
         desc.setWordWrap(True)
-        desc.setStyleSheet(f"color: {C_MUTED}; font-size: 15px; border: none;")
+        desc.setStyleSheet(f"color: {C_MUTED}; font-size: 13px; border: none;")
         desc.setAlignment(Qt.AlignTop)
         layout.addWidget(desc, 1)
 
@@ -294,7 +294,7 @@ class GerenciarPalavrasDialog(QDialog):
             f" border: 1px solid {C_BORDER}; border-radius: 10px;"
             f" padding: 6px; font-size: 14px; }}"
             f"QListWidget::item {{ padding: 8px; border-radius: 6px; }}"
-            f"QListWidget::item:selected {{ background-color: {C_ACCENT}33; }}"
+            f"QListWidget::item:selected {{ background-color: {com_alpha(C_ACCENT, 0x33)}; }}"
         )
         root.addWidget(self.lista, 1)
 
@@ -360,18 +360,15 @@ class PainelExercicio(QWidget):
         layout.setContentsMargins(20, 18, 20, 18)
         layout.setSpacing(14)
 
+        # O botao "Voltar" do cabecalho do modo Praticar ja leva de volta
+        # ao menu quando um exercicio esta aberto, entao aqui fica so o
+        # indicador de progresso.
         header = QHBoxLayout()
         header.setContentsMargins(0, 0, 0, 0)
-        btn_voltar = QPushButton("Voltar")
-        btn_voltar.setObjectName("ghost")
-        btn_voltar.setFixedWidth(90)
-        btn_voltar.clicked.connect(self.voltar.emit)
-        header.addWidget(btn_voltar)
         header.addStretch()
-
         self.label_progresso = QLabel()
         self.label_progresso.setStyleSheet(
-            f"color: {C_MUTED}; font-size: 12px; font-weight: 600;"
+            f"color: {C_MUTED}; font-size: 13px; font-weight: 600;"
         )
         header.addWidget(self.label_progresso)
         layout.addLayout(header)
@@ -768,8 +765,8 @@ class AbaLetras(QWidget):
         prog_row = QHBoxLayout()
         prog_row.setContentsMargins(0, 0, 0, 0)
         lbl_prog = QLabel(f"Progresso geral: {dominadas}/26 dominadas")
-        lbl_prog.setStyleSheet(f"color: {C_MUTED}; font-size: 17px;")
-        lbl_prog.setFixedWidth(320)
+        lbl_prog.setStyleSheet(f"color: {C_MUTED}; font-size: 14px;")
+        lbl_prog.setFixedWidth(260)
         barra_geral = BarraSegmentada(len(LETRAS), dominadas, altura=10)
         prog_row.addWidget(lbl_prog)
         prog_row.addSpacing(10)
@@ -782,18 +779,16 @@ class AbaLetras(QWidget):
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         container = QWidget()
-        container.setStyleSheet("background: transparent; border: none;")
-        grid = QGridLayout(container)
-        grid.setSpacing(10)
-        grid.setAlignment(Qt.AlignTop | Qt.AlignHCenter)
+        container.setObjectName("transparente")
+        # Grade fluida: o numero de colunas depende da largura da janela
+        grid = FlowLayout(container, espacamento=12)
 
-        cols = 6
-        for i, letra in enumerate(LETRAS):
+        for letra in LETRAS:
             nivel = letras_estado.get(letra, 0)
             card = LetraCard(letra, nivel, fonte)
             card.clicked.connect(self.letra_selecionada.emit)
             self.cards[letra] = card
-            grid.addWidget(card, i // cols, i % cols)
+            grid.addWidget(card)
 
         scroll.setWidget(container)
         self._layout_raiz.addWidget(scroll, 1)
@@ -829,18 +824,6 @@ class AbaPalavras(QWidget):
         # Cabecalho padronizado (mesma estrutura da aba Letras):
         # linha 1 = titulo + subtitulo + acao a direita (altura fixa)
         # linha 2 = barra de progresso geral (altura fixa)
-        header = QHBoxLayout()
-        header.setContentsMargins(0, 0, 0, 0)
-        titulo = QLabel("Fases de Palavras")
-        titulo.setStyleSheet(
-            f"color: {C_TEXT}; font-size: 31px; font-weight: 800;"
-        )
-        sub = QLabel("complete uma fase para desbloquear a proxima")
-        sub.setStyleSheet(f"color: {C_MUTED}; font-size: 22px;")
-        header.addWidget(titulo, alignment=Qt.AlignVCenter)
-        header.addSpacing(16)
-        header.addWidget(sub, alignment=Qt.AlignVCenter)
-        header.addStretch()
         btn_gerenciar = QPushButton("Adicionar palavras")
         btn_gerenciar.setFixedHeight(32)
         btn_gerenciar.setStyleSheet(
@@ -850,18 +833,20 @@ class AbaPalavras(QWidget):
             f"QPushButton:hover {{ border: 1px solid {C_ACCENT}; }}"
         )
         btn_gerenciar.clicked.connect(self.gerenciar_solicitado.emit)
-        header.addWidget(btn_gerenciar, alignment=Qt.AlignVCenter)
-        header_wrap = QWidget()
-        header_wrap.setMinimumHeight(58)
-        header_wrap.setLayout(header)
-        self._layout_raiz.addWidget(header_wrap)
+        self._layout_raiz.addWidget(
+            cabecalho_aba(
+                "Fases de Palavras",
+                "complete uma fase para desbloquear a proxima",
+                acao=btn_gerenciar,
+            )
+        )
 
         # Barra de progresso geral (linha propria, altura fixa)
         prog_row = QHBoxLayout()
         prog_row.setContentsMargins(0, 0, 0, 0)
         lbl_prog = QLabel(f"Progresso das fases: {completas}/{len(FASES)}")
-        lbl_prog.setStyleSheet(f"color: {C_MUTED}; font-size: 17px;")
-        lbl_prog.setFixedWidth(320)
+        lbl_prog.setStyleSheet(f"color: {C_MUTED}; font-size: 14px;")
+        lbl_prog.setFixedWidth(260)
         barra_geral = BarraSegmentada(len(FASES), completas, altura=10)
         prog_row.addWidget(lbl_prog)
         prog_row.addSpacing(10)
@@ -871,11 +856,12 @@ class AbaPalavras(QWidget):
         prog_wrap.setLayout(prog_row)
         self._layout_raiz.addWidget(prog_wrap)
 
-        self._layout_raiz.addStretch(1)
-
-        cards_wrap = QHBoxLayout()
-        cards_wrap.setSpacing(18)
-        cards_wrap.addStretch()
+        # Cartoes de fase em grade fluida: 4 lado a lado quando cabe,
+        # 2x2 em janelas menores
+        cards_container = QWidget()
+        cards_container.setObjectName("transparente")
+        cards_wrap = FlowLayout(cards_container, espacamento=18)
+        cards_wrap.setContentsMargins(0, 12, 0, 12)
         for i, fase in enumerate(FASES):
             desbloqueada = i <= self.estado["fases_completas"]
             completa = i < self.estado["fases_completas"]
@@ -899,10 +885,10 @@ class AbaPalavras(QWidget):
         )
         card_custom.clicked.connect(lambda _i: self.fase_custom_selecionada.emit())
         cards_wrap.addWidget(card_custom)
-
-        cards_wrap.addStretch()
-        self._layout_raiz.addLayout(cards_wrap)
-        self._layout_raiz.addStretch(2)
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setWidget(cards_container)
+        self._layout_raiz.addWidget(scroll, 1)
 
     def reconstruir(self):
         self._limpar()
@@ -995,22 +981,9 @@ class AbaQuiz(QWidget):
 
     def _construir(self):
         # Cabecalho padronizado (mesma estrutura das outras abas)
-        header = QHBoxLayout()
-        header.setContentsMargins(0, 0, 0, 0)
-        titulo = QLabel("Quiz de Caligrafia")
-        titulo.setStyleSheet(
-            f"color: {C_TEXT}; font-size: 31px; font-weight: 800;"
+        self._layout_raiz.addWidget(
+            cabecalho_aba("Quiz de Caligrafia", "escolha um tipo e pratique com itens sorteados")
         )
-        sub = QLabel("escolha um tipo e pratique com itens sorteados")
-        sub.setStyleSheet(f"color: {C_MUTED}; font-size: 22px;")
-        header.addWidget(titulo, alignment=Qt.AlignVCenter)
-        header.addSpacing(16)
-        header.addWidget(sub, alignment=Qt.AlignVCenter)
-        header.addStretch()
-        header_wrap = QWidget()
-        header_wrap.setMinimumHeight(58)
-        header_wrap.setLayout(header)
-        self._layout_raiz.addWidget(header_wrap)
 
         # Linha de instrucao (equivalente a barra de progresso das outras
         # abas), com texto bem visivel
@@ -1035,7 +1008,7 @@ class AbaQuiz(QWidget):
         scroll.setWidgetResizable(True)
         scroll.setStyleSheet("border: none; background: transparent;")
         container = QWidget()
-        container.setStyleSheet("background: transparent; border: none;")
+        container.setObjectName("transparente")
         conteudo = QVBoxLayout(container)
         conteudo.setContentsMargins(0, 0, 8, 0)
 
@@ -1177,7 +1150,7 @@ class AbaDicionario(QWidget):
         self.scroll_def.setWidgetResizable(True)
         self.scroll_def.setStyleSheet("border: none; background: transparent;")
         self.def_container = QWidget()
-        self.def_container.setStyleSheet("background: transparent; border: none;")
+        self.def_container.setObjectName("transparente")
         self.def_layout = QVBoxLayout(self.def_container)
         self.def_layout.setContentsMargins(0, 0, 0, 0)
         self.def_layout.setSpacing(12)
@@ -1404,7 +1377,7 @@ class ConquistaCard(QFrame):
     def __init__(self, conquista):
         super().__init__()
         desbloqueada = conquista["desbloqueada"]
-        self.setFixedSize(240, 92)
+        self.setFixedSize(250, 104)
         cor_borda = C_GOOD if desbloqueada else C_BORDER
         self.setStyleSheet(
             f"QFrame {{ background-color: {C_PANEL};"
@@ -1438,7 +1411,7 @@ class ConquistaCard(QFrame):
         desc = QLabel(conquista["descricao"])
         desc.setWordWrap(True)
         desc.setStyleSheet(
-            f"color: {C_MUTED}; font-size: 11px; border: none;"
+            f"color: {C_MUTED}; font-size: 12px; border: none;"
             f" background: transparent;"
         )
         texto.addWidget(desc)
@@ -1473,7 +1446,7 @@ class AbaProgresso(QWidget):
         scroll.setWidgetResizable(True)
         scroll.setStyleSheet("border: none; background: transparent;")
         container = QWidget()
-        container.setStyleSheet("background: transparent; border: none;")
+        container.setObjectName("transparente")
         conteudo = QVBoxLayout(container)
         conteudo.setContentsMargins(0, 0, 8, 0)
         conteudo.setSpacing(18)
@@ -1517,10 +1490,9 @@ class AbaProgresso(QWidget):
         conteudo.addWidget(
             self._titulo_secao(f"CONQUISTAS  ({feitas}/{len(conqs)})")
         )
-        grid_conq = QGridLayout()
-        grid_conq.setSpacing(12)
-        for i, c in enumerate(conqs):
-            grid_conq.addWidget(ConquistaCard(c), i // 3, i % 3)
+        grid_conq = FlowLayout(espacamento=12)
+        for c in conqs:
+            grid_conq.addWidget(ConquistaCard(c))
         wrap_conq = QWidget()
         wrap_conq.setLayout(grid_conq)
         conteudo.addWidget(wrap_conq)

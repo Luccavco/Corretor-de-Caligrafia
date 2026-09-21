@@ -24,7 +24,7 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtGui import QPainter, QPen, QImage, QColor, QFont, QFontMetrics
 from PyQt5.QtCore import Qt, QPoint, pyqtSignal
 
-from ui_theme import C_TEXT, C_BORDER, C_ACCENT, C_CARD, C_PANEL
+from ui_theme import C_TEXT, C_BORDER, C_ACCENT, C_CARD, C_PANEL, com_alpha
 
 COR_GUIA = QColor(0, 0, 0, 45)   # preto bem transparente = efeito "letra fantasma"
 
@@ -48,7 +48,7 @@ class AreaDesenho(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.setMinimumSize(480, 360)
+        self.setMinimumSize(420, 320)
         self.setCursor(Qt.CrossCursor)
         self.imagem = None
         self.desenhando = False
@@ -269,7 +269,7 @@ class CanvasDesenho(QWidget):
 
     def _atualizar_estilo_ferramentas(self):
         ativo = (
-            f"QPushButton {{ background-color: {C_ACCENT}22; color: {C_ACCENT};"
+            f"QPushButton {{ background-color: {com_alpha(C_ACCENT, 0x22)}; color: {C_ACCENT};"
             f" border: 1px solid {C_ACCENT}; border-radius: 8px;"
             f" padding: 6px 14px; font-weight: 600; }}"
         )

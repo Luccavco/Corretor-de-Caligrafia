@@ -3,13 +3,13 @@ e sair da conta. Requer confirmacao para acoes destrutivas."""
 
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
-    QPushButton, QFrame, QMessageBox, QComboBox
+    QPushButton, QFrame, QMessageBox, QComboBox, QScrollArea,
 )
 from PyQt5.QtCore import Qt, pyqtSignal
 
 from ui_theme import (
     C_PANEL, C_CARD, C_TEXT, C_MUTED, C_BORDER, C_ACCENT,
-    C_GOOD, C_BAD,
+    C_GOOD, C_BAD, com_alpha,
 )
 from auth_service import alterar_email, alterar_senha, ErroAuth
 import progresso as prog
@@ -44,15 +44,26 @@ class ConfigWidget(QWidget):
         header.addStretch()
         root.addLayout(header)
 
-        # Corpo centralizado
-        centro = QHBoxLayout()
+        # Corpo: coluna centralizada de largura limitada, com rolagem
+        # (assim a tela cabe em qualquer altura de janela)
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        conteudo = QWidget()
+        conteudo.setObjectName("transparente")
+        centro = QHBoxLayout(conteudo)
+        centro.setContentsMargins(0, 4, 0, 4)
         centro.addStretch()
-        col = QVBoxLayout()
+        coluna = QWidget()
+        coluna.setObjectName("transparente")
+        coluna.setMaximumWidth(640)
+        col = QVBoxLayout(coluna)
+        col.setContentsMargins(0, 0, 0, 0)
         col.setSpacing(16)
         col.setAlignment(Qt.AlignTop)
-        centro.addLayout(col, 3)
+        centro.addWidget(coluna, 1)
         centro.addStretch()
-        root.addLayout(centro, 1)
+        scroll.setWidget(conteudo)
+        root.addWidget(scroll, 1)
 
         # Card: conta
         col.addWidget(self._card_conta())
@@ -110,7 +121,7 @@ class ConfigWidget(QWidget):
 
         btn_sair = QPushButton("Sair da conta")
         btn_sair.clicked.connect(self._sair)
-        lay.addWidget(btn_sair)
+        lay.addWidget(btn_sair, alignment=Qt.AlignLeft)
         return card
 
     def _card_meta_diaria(self):
@@ -164,7 +175,7 @@ class ConfigWidget(QWidget):
         btn = QPushButton("Alterar email")
         btn.setObjectName("primary")
         btn.clicked.connect(self._alterar_email)
-        lay.addWidget(btn)
+        lay.addWidget(btn, alignment=Qt.AlignLeft)
         return card
 
     def _card_mudar_senha(self):
@@ -185,14 +196,14 @@ class ConfigWidget(QWidget):
         btn = QPushButton("Alterar senha")
         btn.setObjectName("primary")
         btn.clicked.connect(self._alterar_senha)
-        lay.addWidget(btn)
+        lay.addWidget(btn, alignment=Qt.AlignLeft)
         return card
 
     def _card_zona_perigo(self):
         card = QFrame()
         card.setStyleSheet(
             f"QFrame {{ background-color: {C_PANEL};"
-            f" border: 1px solid {C_BAD}55; border-radius: 12px; }}"
+            f" border: 1px solid {com_alpha(C_BAD, 0x55)}; border-radius: 12px; }}"
         )
         lay = QVBoxLayout(card)
         lay.setContentsMargins(20, 16, 20, 16)
@@ -221,7 +232,7 @@ class ConfigWidget(QWidget):
             f"QPushButton:hover {{ background-color: #e87070; }}"
         )
         btn.clicked.connect(self._resetar_progresso)
-        lay.addWidget(btn)
+        lay.addWidget(btn, alignment=Qt.AlignLeft)
         return card
 
     # ── Acoes ──────────────────────────────────────────────────────
