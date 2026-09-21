@@ -55,6 +55,16 @@ O projeto é composto por um **aplicativo desktop** (Python + PyQt5) e um **site
 
 ## Instalação
 
+### Pelo pacote (recomendado)
+
+Baixe `Calligraphos-<versão>-linux.zip` na página de [Releases](https://github.com/Luccavco/Corretor-de-Caligrafia/releases), extraia e rode:
+```
+./instalar.sh
+```
+O instalador cria o ambiente virtual, instala as dependências e registra o atalho "Calligraphos" no menu de aplicativos. Depois, coloque as credenciais (seção Configuração) na pasta e abra com `./calligraphos.sh`.
+
+### Pelo código-fonte
+
 Clone o repositório:
 ```
 git clone https://github.com/Luccavco/Corretor-de-Caligrafia.git
@@ -165,7 +175,8 @@ npm run dev
 │       ├── anel_progresso.py, grafico_evolucao.py
 │       └── ui_helpers.py, ui_theme.py
 ├── tests/                        # test_letra_prep, test_formacao, test_avaliador
-├── scripts/                      # gerar_figura2.py (artigo), testar_pipeline.py
+├── scripts/                      # gerar_figura2.py (artigo), testar_pipeline.py, empacotar.sh (release)
+├── instalar.sh                   # Instalador do pacote distribuído
 ├── main_ui.py                    # Atalho de compatibilidade (chama o pacote)
 ├── config.json                   # Ajustes (limiares, pesos, motor padrão)
 ├── requirements.txt / pyproject.toml
