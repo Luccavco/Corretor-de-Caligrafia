@@ -43,17 +43,21 @@ def remover_fragmentos_de_borda(mascara, fracao=0.25):
     na borda do recorte: sao quase sempre pedacos de letras vizinhas que a
     segmentacao deixou entrar na caixa (ex.: um traco do O ao lado do F).
     Partes legitimas da letra ou sao grandes ou nao tocam a borda."""
-    n, rotulos, stats, _ = cv2.connectedComponentsWithStats(mascara, connectivity=8)
+    # Componentes calculados numa mascara levemente dilatada: um vao de
+    # 1-3 px (perna de um A que a binarizacao soltou) nao separa a letra,
+    # enquanto a distancia ate a letra vizinha e bem maior.
+    dilatada = cv2.dilate(mascara, np.ones((5, 5), np.uint8))
+    n, rotulos, stats, _ = cv2.connectedComponentsWithStats(dilatada, connectivity=8)
     if n <= 2:
         return mascara
     h, w = mascara.shape
-    areas = stats[1:, cv2.CC_STAT_AREA]
+    areas = np.array([(mascara[rotulos == i] > 0).sum() for i in range(1, n)])
     maior = areas.max()
     saida = mascara.copy()
     for i in range(1, n):
-        x, y, cw, ch, area = stats[i]
+        x, y, cw, ch, _ = stats[i]
         toca_borda = x == 0 or y == 0 or x + cw == w or y + ch == h
-        if area < fracao * maior and toca_borda:
+        if areas[i - 1] < fracao * maior and toca_borda:
             saida[rotulos == i] = 0
     return saida
 

@@ -142,7 +142,13 @@ def _merge_overlapping(boxes):
         # Sobreposicao horizontal entre a caixa atual e a anterior
         overlap = min(mx + mw, x + w) - max(mx, x)
         smaller = min(w, mw)
-        if overlap > smaller * 0.4:
+        # Fragmento de traco quebrado: caixa bem mais estreita que a outra,
+        # contida na altura dela e encostando na horizontal (perna de um A
+        # que a binarizacao separou do corpo, por exemplo)
+        menor, maior = ((x, y, w, h), (mx, my, mw, mh)) if w < mw else ((mx, my, mw, mh), (x, y, w, h))
+        contido = (menor[1] >= maior[1] - 2 and menor[1] + menor[3] <= maior[1] + maior[3] + 2)
+        fragmento = overlap > 0 and menor[2] < 0.6 * maior[2] and contido
+        if overlap > smaller * 0.4 or fragmento:
             nx = min(mx, x)
             ny = min(my, y)
             nx2 = max(mx + mw, x + w)
