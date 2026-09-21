@@ -48,3 +48,8 @@ test_images/
 # Config local do Claude Code (launch.json)
 .claude/
 calligraphos.log*
+
+# Material de terceiros e template usados como referencia (nao versionar)
+para artigo/*.pdf
+para artigo/*.zip
+!para artigo/entrega/*.pdf
