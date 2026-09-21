@@ -38,7 +38,7 @@ class ConfigWidget(QWidget):
         btn_voltar.clicked.connect(self.voltar_solicitado.emit)
         header.addWidget(btn_voltar)
         header.addSpacing(10)
-        titulo = QLabel("Configuracoes")
+        titulo = QLabel("Configurações")
         titulo.setStyleSheet(f"font-size: 20px; font-weight: 800; color: {C_TEXT};")
         header.addWidget(titulo)
         header.addStretch()
@@ -109,7 +109,7 @@ class ConfigWidget(QWidget):
 
     def _card_conta(self):
         card, lay = self._make_card("CONTA")
-        info = QLabel(f"Voce esta logado como:")
+        info = QLabel(f"Você está logado como:")
         info.setStyleSheet(f"color: {C_MUTED}; font-size: 12px; border: none;")
         lay.addWidget(info)
 
@@ -125,17 +125,17 @@ class ConfigWidget(QWidget):
         return card
 
     def _card_meta_diaria(self):
-        card, lay = self._make_card("META DIARIA")
+        card, lay = self._make_card("META DIÁRIA")
         info = QLabel(
-            "Quantos exercicios voce quer fazer por dia. A meta aparece na "
-            "tela inicial e ajuda a manter sua sequencia."
+            "Quantos exercícios você quer fazer por dia. A meta aparece na "
+            "tela inicial e ajuda a manter sua sequência."
         )
         info.setWordWrap(True)
         info.setStyleSheet(f"color: {C_MUTED}; font-size: 12px; border: none;")
         lay.addWidget(info)
 
         linha = QHBoxLayout()
-        lbl = QLabel("Exercicios por dia:")
+        lbl = QLabel("Exercícios por dia:")
         lbl.setStyleSheet(f"color: {C_TEXT}; font-size: 13px; border: none;")
         linha.addWidget(lbl)
 
@@ -182,7 +182,7 @@ class ConfigWidget(QWidget):
         card, lay = self._make_card("ALTERAR SENHA")
         self.input_nova_senha = QLineEdit()
         self.input_nova_senha.setEchoMode(QLineEdit.Password)
-        self.input_nova_senha.setPlaceholderText("Nova senha (minimo 6 caracteres)")
+        self.input_nova_senha.setPlaceholderText("Nova senha (mínimo 6 caracteres)")
         self.input_nova_senha.setStyleSheet(self._estilo_input())
         lay.addWidget(self.input_nova_senha)
 
@@ -218,7 +218,7 @@ class ConfigWidget(QWidget):
 
         aviso = QLabel(
             "Apagar seu progresso ira reiniciar todas as suas letras dominadas "
-            "e fases completas. Essa acao nao pode ser desfeita."
+            "e fases completas. Essa ação não pode ser desfeita."
         )
         aviso.setWordWrap(True)
         aviso.setStyleSheet(f"color: {C_MUTED}; font-size: 12px; border: none;")
@@ -274,8 +274,8 @@ class ConfigWidget(QWidget):
             self,
             "Resetar progresso",
             "Tem certeza que deseja resetar todo o seu progresso?\n\n"
-            "Todas as letras dominadas e fases completas serao perdidas.\n"
-            "Essa acao nao pode ser desfeita.",
+            "Todas as letras dominadas e fases completas serão perdidas.\n"
+            "Essa ação não pode ser desfeita.",
             QMessageBox.Yes | QMessageBox.No,
             QMessageBox.No,
         )

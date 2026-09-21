@@ -60,7 +60,7 @@ def criar_splash():
     painter.setPen(QColor(C_MUTED))
     painter.drawText(
         0, 170, largura, 30, Qt.AlignHCenter,
-        "Reconhecimento e Avaliacao de Caligrafia"
+        "Reconhecimento e Avaliação de Caligrafia"
     )
 
     # Linha de destaque
@@ -147,7 +147,7 @@ class TelaInicial(QWidget):
         lbl_email.setStyleSheet(f"color: {C_MUTED}; font-size: 13px;")
         topo.addWidget(lbl_email)
         topo.addSpacing(6)
-        btn_config = QPushButton("Configuracoes")
+        btn_config = QPushButton("Configurações")
         btn_config.setObjectName("ghost")
         btn_config.clicked.connect(ir_para_config)
         topo.addWidget(btn_config)
@@ -171,7 +171,7 @@ class TelaInicial(QWidget):
             layout.addWidget(faixa, alignment=Qt.AlignHCenter)
             layout.addSpacing(20)
 
-        sub = QLabel("Escolha o que voce quer fazer")
+        sub = QLabel("Escolha o que você quer fazer")
         sub.setAlignment(Qt.AlignCenter)
         sub.setStyleSheet(f"color: {C_MUTED}; font-size: 17px;")
         layout.addWidget(sub)
@@ -185,15 +185,15 @@ class TelaInicial(QWidget):
         card_praticar = ModoCard(
             "A",
             "Praticar Caligrafia",
-            "Treine sua escrita com exercicios guiados de letras e palavras. Receba retorno automatico sobre cada tentativa.",
+            "Treine sua escrita com exercícios guiados de letras e palavras. Receba retorno automático sobre cada tentativa.",
             ir_para_praticar,
         )
         cards_row.addWidget(card_praticar)
 
         card_analise = ModoCard(
             "?",
-            "Analise Individual",
-            "Envie uma foto de qualquer texto manuscrito. O sistema transcreve o conteudo e avalia a caligrafia letra por letra.",
+            "Análise Individual",
+            "Envie uma foto de qualquer texto manuscrito. O sistema transcreve o conteúdo e avalia a caligrafia letra por letra.",
             ir_para_analise,
         )
         cards_row.addWidget(card_analise)
@@ -253,7 +253,7 @@ class TelaInicial(QWidget):
         )
         bloco_meta.addWidget(lbl_meta_val)
         lbl_meta_rot = QLabel(
-            "meta diaria cumprida!" if cumpriu else "exercicios hoje (meta diaria)"
+            "meta diária cumprida!" if cumpriu else "exercícios hoje (meta diária)"
         )
         lbl_meta_rot.setStyleSheet(
             f"color: {C_MUTED}; font-size: 12px; border: none;"
@@ -286,7 +286,7 @@ class TelaInicial(QWidget):
                 else f"letras para revisar hoje"
             )
         else:
-            texto_rev = "nenhuma revisao pendente"
+            texto_rev = "nenhuma revisão pendente"
         lbl_rev_rot = QLabel(texto_rev)
         lbl_rev_rot.setWordWrap(True)
         lbl_rev_rot.setStyleSheet(
@@ -302,7 +302,7 @@ class TelaInicial(QWidget):
         QMessageBox.about(
             self, "Sobre o Calligraphos",
             "<h3>Calligraphos</h3>"
-            "<p>Sistema de reconhecimento e avaliacao de caligrafia "
+            "<p>Sistema de reconhecimento e avaliação de caligrafia "
             "desenvolvido como Trabalho de Conclusao de Curso.</p>"
             "<p>O programa transcreve texto manuscrito usando visao "
             "computacional (Google Cloud Vision) e avalia a qualidade da "
@@ -318,26 +318,26 @@ class TelaInicial(QWidget):
             "<p>Treine as 26 letras do alfabeto (cada uma tem uma barra de "
             "progresso de 0 a 5) e complete fases de palavras com "
             "dificuldade crescente. Escreva o alvo em um papel, fotografe "
-            "e envie - o sistema diz se voce acertou.</p>"
+            "e envie - o sistema diz se você acertou.</p>"
             "<h3>Analise Individual</h3>"
             "<p>Envie a foto de qualquer texto manuscrito (de uma palavra "
-            "a uma redacao inteira). O sistema transcreve o texto e avalia "
-            "cada letra: verde (boa), ambar (aceitavel) e vermelho "
+            "a uma redação inteira). O sistema transcreve o texto e avalia "
+            "cada letra: verde (boa), âmbar (aceitável) e vermelho "
             "(precisa melhorar).</p>"
             "<p>Clique em qualquer letra (na imagem ou na lista) para ver "
-            "detalhes, corrigir a identificacao ou treinar aquela letra. "
-            "Use os botoes Adicionar/Remover letra para ajustar deteccoes "
+            "detalhes, corrigir a identificação ou treinar aquela letra. "
+            "Use os botões Adicionar/Remover letra para ajustar detecções "
             "manualmente.</p>"
             "<h3>Dicas de foto</h3>"
-            "<p>Use boa iluminacao, evite sombras e prefira letra de forma "
-            "maiuscula para a avaliacao mais precisa.</p>",
+            "<p>Use boa iluminação, evite sombras e prefira letra de forma "
+            "maiúscula para a avaliação mais precisa.</p>",
         )
 
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Calligraphos - Reconhecimento e Avaliacao de Caligrafia")
+        self.setWindowTitle("Calligraphos - Reconhecimento e Avaliação de Caligrafia")
         self.setMinimumSize(1180, 720)
         self.setStyleSheet(STYLE)
 
@@ -462,8 +462,8 @@ class MainWindow(QMainWindow):
             faltam = meta - feitos
             self.tray.showMessage(
                 "Hora de praticar!",
-                f"Voce ainda nao bateu sua meta diaria. Faltam {faltam} "
-                f"exercicio(s) para chegar em {meta}.",
+                f"Você ainda não bateu sua meta diária. Faltam {faltam} "
+                f"exercício(s) para chegar em {meta}.",
                 QSystemTrayIcon.Information,
                 6000,
             )

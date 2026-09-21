@@ -112,7 +112,7 @@ class DetalheLetraDialog(QDialog):
         return card, lay
 
     def _card_avaliacao(self):
-        card, lay = self._make_card("AVALIACAO DA CALIGRAFIA")
+        card, lay = self._make_card("AVALIAÇÃO DA CALIGRAFIA")
         cores = {0: C_BAD, 1: C_OK, 2: C_GOOD}
         cor = cores.get(self.classe, C_MUTED)
         linha = QHBoxLayout()
@@ -130,11 +130,11 @@ class DetalheLetraDialog(QDialog):
         return card
 
     def _card_nao_identificada(self):
-        card, lay = self._make_card("LETRA NAO IDENTIFICADA", cor_borda=f"{com_alpha(C_BAD, 0x55)}")
+        card, lay = self._make_card("LETRA NÃO IDENTIFICADA", cor_borda=f"{com_alpha(C_BAD, 0x55)}")
         aviso = QLabel(
-            "O programa nao conseguiu identificar essa letra automaticamente. "
-            "Verifique se a imagem esta com boa iluminacao, foco e contraste. "
-            "Caso o problema nao seja a imagem, informe abaixo qual letra era "
+            "O programa não conseguiu identificar essa letra automaticamente. "
+            "Verifique se a imagem está com boa iluminação, foco e contraste. "
+            "Caso o problema não seja a imagem, informe abaixo qual letra era "
             "para poder treina-la."
         )
         aviso.setWordWrap(True)
@@ -145,8 +145,8 @@ class DetalheLetraDialog(QDialog):
     def _card_adicao_manual(self):
         card, lay = self._make_card("ADICIONAR LETRA MANUAL", cor_borda=C_ACCENT)
         aviso = QLabel(
-            "Voce esta adicionando uma letra que nao foi detectada pela "
-            "segmentacao automatica. Informe qual letra e abaixo e clique "
+            "Você está adicionando uma letra que não foi detectada pela "
+            "segmentação automática. Informe qual letra é abaixo e clique "
             "em Adicionar."
         )
         aviso.setWordWrap(True)
@@ -177,7 +177,7 @@ class DetalheLetraDialog(QDialog):
         card, lay = self._make_card(titulo)
 
         dica = QLabel(
-            "Se necessario, informe qual e a letra correta (apenas A-Z)."
+            "Se necessário, informe qual é a letra correta (apenas A-Z)."
             if not (self.letra == "?" or self.modo_adicao_manual)
             else "Digite a letra correspondente (apenas A-Z)."
         )
@@ -223,7 +223,7 @@ class DetalheLetraDialog(QDialog):
         nivel = self._nivel_da_letra(letra) if letra != "?" else None
         if self.tem_conta and letra != "?" and nivel is not None:
             self.card_progresso.setVisible(True)
-            texto = "Dominada" if nivel >= 5 else f"Nivel {nivel} de 5"
+            texto = "Dominada" if nivel >= 5 else f"Nível {nivel} de 5"
             cor = C_GOOD if nivel >= 5 else C_ACCENT
             self.lbl_status_prog.setText(texto)
             self.lbl_status_prog.setStyleSheet(

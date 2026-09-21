@@ -16,7 +16,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 CATEGORIAS = {
     0: "Ruim",
-    1: "Aceitavel",
+    1: "Aceitável",
     2: "Boa",
 }
 
@@ -27,9 +27,9 @@ _transform = transforms.Compose([
 
 
 def load_modelo():
-    """Carrega a CNN treinada (modelo_caligrafia.pth) uma unica vez."""
+    """Carrega a CNN treinada (modelo_caligrafia.pth) uma única vez."""
     global modelo_cnn
-    print("Carregando modelo de avaliacao...")
+    print("Carregando modelo de avaliação...")
     modelo_cnn = models.mobilenet_v2(weights=None)
     modelo_cnn.classifier[1] = nn.Linear(modelo_cnn.last_channel, 3)
     modelo_cnn.load_state_dict(
@@ -37,7 +37,7 @@ def load_modelo():
     )
     modelo_cnn.to(device)
     modelo_cnn.eval()
-    print("Modelo de avaliacao carregado!")
+    print("Modelo de avaliação carregado!")
 
 
 def _preparar_tensor(char_img_array):
@@ -100,14 +100,14 @@ def formatar_feedback(avaliacao):
     linhas.append(f"Pontuacao geral: {avaliacao['pontuacao_geral']}/100")
     linhas.append(f"Caracteres analisados: {avaliacao['total']}")
     linhas.append("-" * 32)
-    linhas.append(f"Boa formacao:     {avaliacao['boas']} letra(s)")
-    linhas.append(f"Aceitavel:        {avaliacao['aceitaveis']} letra(s)")
+    linhas.append(f"Boa formação:     {avaliacao['boas']} letra(s)")
+    linhas.append(f"Aceitável:        {avaliacao['aceitaveis']} letra(s)")
     linhas.append(f"Precisa melhorar: {avaliacao['ruins']} letra(s)")
 
     ruins = [r for r in avaliacao["caracteres"] if r["classe"] == 0]
     if ruins:
         linhas.append("-" * 32)
-        linhas.append("Letras que precisam de atencao:")
+        linhas.append("Letras que precisam de atenção:")
         for r in ruins:
             linhas.append(f"  Letra {r['indice']} (confianca {r['confianca']:.0%})")
 
@@ -115,10 +115,10 @@ def formatar_feedback(avaliacao):
 
 
 def gerar_relatorio(texto, avaliacao):
-    """Relatorio completo em texto, pronto para salvar em arquivo."""
+    """Relatório completo em texto, pronto para salvar em arquivo."""
     linhas = []
     linhas.append("=" * 48)
-    linhas.append("RELATORIO DE ANALISE DE CALIGRAFIA")
+    linhas.append("RELATÓRIO DE ANÁLISE DE CALIGRAFIA")
     linhas.append("=" * 48)
     linhas.append("")
     linhas.append("TEXTO RECONHECIDO:")

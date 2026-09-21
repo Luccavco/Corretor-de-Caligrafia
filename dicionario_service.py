@@ -175,7 +175,7 @@ def _buscar_aberto(palavra):
                 "classe": "",
                 "definicao": definicao,
                 "exemplos": exemplos[:3],
-                "fonte": "Dicionario Aberto",
+                "fonte": "Dicionário Aberto",
             }
     return None
 

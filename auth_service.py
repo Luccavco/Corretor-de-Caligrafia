@@ -22,10 +22,10 @@ class ErroAuth(Exception):
 # ── Traducao de erros do Firebase ──────────────────────────────────────
 
 MENSAGENS = {
-    "EMAIL_EXISTS": "Este email ja esta cadastrado.",
-    "INVALID_EMAIL": "Email invalido.",
-    "WEAK_PASSWORD": "A senha precisa ter no minimo 6 caracteres.",
-    "EMAIL_NOT_FOUND": "Nao encontramos uma conta com esse email.",
+    "EMAIL_EXISTS": "Este email já está cadastrado.",
+    "INVALID_EMAIL": "Email inválido.",
+    "WEAK_PASSWORD": "A senha precisa ter no mínimo 6 caracteres.",
+    "EMAIL_NOT_FOUND": "Não encontramos uma conta com esse email.",
     "INVALID_PASSWORD": "Senha incorreta.",
     "INVALID_LOGIN_CREDENTIALS": "Email ou senha incorretos.",
     "USER_DISABLED": "Esta conta foi desativada.",
@@ -43,7 +43,7 @@ def _extrair_erro(exc):
         if chave in txt:
             return mensagem
     if "Network" in txt or "timeout" in txt.lower():
-        return "Sem conexao com a internet."
+        return "Sem conexão com a internet."
     return "Erro ao se conectar com o servidor. Tente novamente."
 
 
@@ -54,7 +54,7 @@ def registrar(email, senha):
     if not email or "@" not in email:
         raise ErroAuth("Digite um email valido.")
     if len(senha) < 6:
-        raise ErroAuth("A senha precisa ter no minimo 6 caracteres.")
+        raise ErroAuth("A senha precisa ter no mínimo 6 caracteres.")
     try:
         auth = get_pyrebase_auth()
         user = auth.create_user_with_email_and_password(email, senha)
@@ -65,7 +65,7 @@ def registrar(email, senha):
 
 
 def login(email, senha):
-    """Autentica um usuario existente."""
+    """Autentica um usuário existente."""
     if not email:
         raise ErroAuth("Digite o email.")
     if not senha:
@@ -80,7 +80,7 @@ def login(email, senha):
 
 
 def logout():
-    """Encerra a sessao local."""
+    """Encerra a sessão local."""
     try:
         if os.path.exists(ARQUIVO_SESSAO):
             os.remove(ARQUIVO_SESSAO)
@@ -91,7 +91,7 @@ def logout():
 # ── Sessao persistente ─────────────────────────────────────────────────
 
 def _salvar_sessao(user):
-    """Guarda dados minimos da sessao em disco para autologin."""
+    """Guarda dados mínimos da sessão em disco para autologin."""
     try:
         with open(ARQUIVO_SESSAO, "w", encoding="utf-8") as f:
             json.dump({
@@ -133,9 +133,9 @@ def carregar_sessao():
 # ── Alteracao de credenciais ───────────────────────────────────────────
 
 def alterar_senha(id_token, nova_senha):
-    """Muda a senha do usuario logado."""
+    """Muda a senha do usuário logado."""
     if len(nova_senha) < 6:
-        raise ErroAuth("A nova senha precisa ter no minimo 6 caracteres.")
+        raise ErroAuth("A nova senha precisa ter no mínimo 6 caracteres.")
     try:
         auth = get_pyrebase_auth()
         # O Pyrebase nao expoe troca de senha diretamente; chamamos o
@@ -157,7 +157,7 @@ def alterar_senha(id_token, nova_senha):
 
 
 def alterar_email(id_token, novo_email):
-    """Muda o email do usuario logado."""
+    """Muda o email do usuário logado."""
     if not novo_email or "@" not in novo_email:
         raise ErroAuth("Digite um email valido.")
     try:
@@ -178,7 +178,7 @@ def alterar_email(id_token, novo_email):
 
 
 def _atualizar_sessao_tokens(dados_api, novo_email=None):
-    """Atualiza os tokens (e opcionalmente o email) na sessao salva."""
+    """Atualiza os tokens (e opcionalmente o email) na sessão salva."""
     if not os.path.exists(ARQUIVO_SESSAO):
         return
     try:

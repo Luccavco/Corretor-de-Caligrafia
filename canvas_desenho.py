@@ -197,7 +197,7 @@ class AreaDesenho(QWidget):
 
 
 class CanvasDesenho(QWidget):
-    """Quadro completo: area de desenho + barra de ferramentas."""
+    """Quadro completo: área de desenho + barra de ferramentas."""
     desenhou = pyqtSignal()
 
     def __init__(self, parent=None):

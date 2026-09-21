@@ -26,7 +26,7 @@ def load_model():
 
 
 def predict(pil_image):
-    """Transcreve uma unica imagem (uma linha de texto ou palavra)."""
+    """Transcreve uma única imagem (uma linha de texto ou palavra)."""
     if processor is None or model is None:
         load_model()
     pixel_values = processor(images=pil_image, return_tensors="pt").pixel_values

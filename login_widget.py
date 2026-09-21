@@ -93,7 +93,7 @@ class LoginWidget(QWidget):
         form_layout.addWidget(self.input_email)
 
         self.input_senha = QLineEdit()
-        self.input_senha.setPlaceholderText("Senha (minimo 6 caracteres)")
+        self.input_senha.setPlaceholderText("Senha (mínimo 6 caracteres)")
         self.input_senha.setEchoMode(QLineEdit.Password)
         self.input_senha.setStyleSheet(self._estilo_input())
         self.input_senha.returnPressed.connect(self._acao_principal)
@@ -113,7 +113,7 @@ class LoginWidget(QWidget):
         self.btn_principal.clicked.connect(self._acao_principal)
         form_layout.addWidget(self.btn_principal)
 
-        self.btn_alternar = QPushButton("Nao tenho conta - Criar conta")
+        self.btn_alternar = QPushButton("Não tenho conta - Criar conta")
         self.btn_alternar.setObjectName("ghost")
         self.btn_alternar.clicked.connect(self._alternar_modo)
         form_layout.addWidget(self.btn_alternar)
@@ -150,12 +150,12 @@ class LoginWidget(QWidget):
             self.modo = "registrar"
             self.lbl_titulo_form.setText("Criar conta")
             self.btn_principal.setText("Criar conta")
-            self.btn_alternar.setText("Ja tenho conta - Entrar")
+            self.btn_alternar.setText("Já tenho conta - Entrar")
         else:
             self.modo = "login"
             self.lbl_titulo_form.setText("Entrar")
             self.btn_principal.setText("Entrar")
-            self.btn_alternar.setText("Nao tenho conta - Criar conta")
+            self.btn_alternar.setText("Não tenho conta - Criar conta")
         self.lbl_erro.setText("")
 
     def _acao_principal(self):

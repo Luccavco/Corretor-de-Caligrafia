@@ -140,7 +140,7 @@ def _atualizar_streak(estado):
 
 
 def _contar_exercicio_hoje(estado):
-    """Incrementa o contador de exercicios do dia, zerando se mudou o dia."""
+    """Incrementa o contador de exercícios do dia, zerando se mudou o dia."""
     hoje = date.today().isoformat()
     if estado.get("data_feitos_hoje", "") != hoje:
         estado["data_feitos_hoje"] = hoje
@@ -222,9 +222,9 @@ CONQUISTAS = [
      lambda e: e["fases_completas"] >= 3),
     ("colecionador", "Colecionador", "Adicione 5 palavras em Minhas Palavras",
      lambda e: len(e.get("palavras_customizadas", [])) >= 5),
-    ("dedicado", "Dedicado", "Faca 50 exercicios corretos",
+    ("dedicado", "Dedicado", "Faça 50 exercícios corretos",
      lambda e: e.get("exercicios_feitos", 0) >= 50),
-    ("sequencia_fogo", "Sequencia de fogo", "Pratique 7 dias seguidos",
+    ("sequencia_fogo", "Sequência de fogo", "Pratique 7 dias seguidos",
      lambda e: e.get("streak_recorde", 0) >= 7),
     ("incansavel", "Incansavel", "Pratique 30 dias seguidos",
      lambda e: e.get("streak_recorde", 0) >= 30),
@@ -244,7 +244,7 @@ def _verificar_conquistas(estado):
 
 
 def conquistas_detalhadas(estado):
-    """Lista todas as conquistas com status (desbloqueada ou nao)."""
+    """Lista todas as conquistas com status (desbloqueada ou não)."""
     desbloqueadas = set(estado.get("conquistas", []))
     resultado = []
     for cid, titulo, desc, _teste in CONQUISTAS:

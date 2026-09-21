@@ -78,17 +78,17 @@ class BarraSegmentada(QWidget):
 FASES = [
     {
         "nome": "Iniciante",
-        "descricao": "Palavras curtas de 3 a 4 letras, uteis para se acostumar com o traco basico.",
+        "descricao": "Palavras curtas de 3 a 4 letras, úteis para se acostumar com o traço básico.",
         "palavras": ["CASA", "GATO", "PAO", "SOL", "MAR"],
     },
     {
-        "nome": "Intermediario",
-        "descricao": "Palavras medias de 5 a 6 letras, com combinacoes mais desafiadoras.",
+        "nome": "Intermediário",
+        "descricao": "Palavras médias de 5 a 6 letras, com combinações mais desafiadoras.",
         "palavras": ["LIVRO", "PORTA", "MESA", "FLOR", "PRAIA"],
     },
     {
-        "nome": "Avancado",
-        "descricao": "Palavras mais longas e menos comuns, para consolidar a fluencia da escrita.",
+        "nome": "Avançado",
+        "descricao": "Palavras mais longas e menos comuns, para consolidar a fluência da escrita.",
         "palavras": ["ESCOLA", "ARVORE", "JANELA", "CADERNO", "MENINO"],
     },
 ]
@@ -200,11 +200,11 @@ class FaseCard(QFrame):
         topo.addWidget(num)
         topo.addStretch()
         if custom:
-            status_txt, cor_st = ("Disponivel", C_ACCENT) if desbloqueada else ("Vazia", C_MUTED)
+            status_txt, cor_st = ("Disponível", C_ACCENT) if desbloqueada else ("Vazia", C_MUTED)
         elif completa:
-            status_txt, cor_st = "Concluida", C_GOOD
+            status_txt, cor_st = "Concluída", C_GOOD
         elif desbloqueada:
-            status_txt, cor_st = "Disponivel", C_ACCENT
+            status_txt, cor_st = "Disponível", C_ACCENT
         else:
             status_txt, cor_st = "Bloqueada", C_MUTED
         status = QLabel(status_txt)
@@ -261,8 +261,8 @@ class GerenciarPalavrasDialog(QDialog):
         root.addWidget(titulo)
 
         dica = QLabel(
-            "Adicione palavras que voce quer treinar (apenas letras A-Z, "
-            "sem espacos ou acentos)."
+            "Adicione palavras que você quer treinar (apenas letras A-Z, "
+            "sem espaços ou acentos)."
         )
         dica.setWordWrap(True)
         dica.setStyleSheet(f"color: {C_MUTED}; font-size: 12px;")
@@ -513,28 +513,28 @@ class PainelExercicio(QWidget):
             self.label_alvo.setText("OK")
             self.label_progresso.setText(f"Letra '{self.alvos[0]}' dominada!")
             self._set_barra(self.meta)
-            self.label_imagem.setText("Voce dominou esta letra.\nVolte para escolher outra.")
+            self.label_imagem.setText("Você dominou esta letra.\nVolte para escolher outra.")
         else:
             total = len(self.alvos)
             percentual = round(100 * self.acertos / total) if total else 0
             # Mostra a fracao de acertos (mais claro que um "0%" solto)
             self.label_alvo.setText(f"{self.acertos}/{total}")
-            self.label_progresso.setText(f"Concluido - {self.acertos} de {total} acertos")
+            self.label_progresso.setText(f"Concluído - {self.acertos} de {total} acertos")
             self._set_barra(total)
             # Mensagem varia conforme o desempenho
             if percentual >= 80:
-                msg = "Excelente trabalho! Voce mandou muito bem."
+                msg = "Excelente trabalho! Você mandou muito bem."
             elif percentual >= 50:
                 msg = "Bom trabalho! Continue praticando para melhorar."
             elif percentual > 0:
-                msg = "Voce concluiu! Pratique mais para acertar todas."
+                msg = "Você concluiu! Pratique mais para acertar todas."
             else:
-                msg = "Nao desanime! Tente de novo com calma, voce consegue."
+                msg = "Não desanime! Tente de novo com calma, você consegue."
             if self.custom:
                 self.label_imagem.setText(msg)
             elif percentual > 0:
                 self.label_imagem.setText(
-                    "Fase concluida! Voce desbloqueou a proxima.\n\n" + msg
+                    "Fase concluída! Você desbloqueou a próxima.\n\n" + msg
                 )
             else:
                 self.label_imagem.setText(msg)
@@ -581,7 +581,7 @@ class PainelExercicio(QWidget):
             pass
 
     def enviar_tentativa(self):
-        """Envia o que estiver no quadro de desenho para verificacao."""
+        """Envia o que estiver no quadro de desenho para verificação."""
         # Garante que o quadro esteja visivel (caso viesse de uma foto)
         self.stack_envio.setCurrentIndex(0)
         if self.canvas.esta_vazio():
@@ -594,7 +594,7 @@ class PainelExercicio(QWidget):
         self._verificar_path(path, temporario=True)
 
     def carregar_e_verificar(self):
-        """Envia uma foto de arquivo para verificacao."""
+        """Envia uma foto de arquivo para verificação."""
         path, _ = QFileDialog.getOpenFileName(
             self, "Selecionar sua tentativa", "",
             "Imagens (*.png *.jpg *.jpeg)"
@@ -637,7 +637,7 @@ class PainelExercicio(QWidget):
         if acertou:
             self.acerto.emit(alvo)
             self.acertos += 1
-            self.label_feedback.setText("Muito bem! Voce acertou.")
+            self.label_feedback.setText("Muito bem! Você acertou.")
             self.label_feedback.setStyleSheet(
                 f"color: {C_GOOD}; font-size: 15px; font-weight: 700;"
                 f" padding: 8px; border: none;"
@@ -671,21 +671,21 @@ class PainelExercicio(QWidget):
         limpo = "".join(c for c in (texto or "").upper() if c.isalpha())
         if self.modo == "letra":
             if not limpo:
-                return False, "Nao consegui identificar nenhuma letra. Tente outra foto."
+                return False, "Não consegui identificar nenhuma letra. Tente outra foto."
             if limpo[0] != alvo:
                 return False, f"O sistema reconheceu '{limpo[0]}', mas o alvo era '{alvo}'."
             if not avaliacao or avaliacao["total"] == 0:
-                return False, "Nao consegui detectar o traco. Tente uma foto mais clara."
+                return False, "Não consegui detectar o traço. Tente uma foto mais clara."
             if avaliacao["caracteres"][0]["classe"] == 0:
-                return False, "A letra foi reconhecida, mas a formacao esta muito irregular."
+                return False, "A letra foi reconhecida, mas a formação está muito irregular."
             return True, ""
         else:
             if limpo != alvo:
                 return False, f"Reconhecido: '{texto.strip() if texto else '(nada)'}'. Esperado: '{alvo}'."
             if not avaliacao or avaliacao["total"] == 0:
-                return False, "Nao consegui detectar as letras. Tente uma foto mais clara."
+                return False, "Não consegui detectar as letras. Tente uma foto mais clara."
             if avaliacao["ruins"] > len(alvo) * 0.3:
-                return False, f"Palavra correta, mas {avaliacao['ruins']} letra(s) com formacao ruim."
+                return False, f"Palavra correta, mas {avaliacao['ruins']} letra(s) com formação ruim."
             return True, ""
 
 
@@ -723,9 +723,9 @@ class AbaLetras(QWidget):
         self._layout_raiz.addWidget(titulo)
 
         desc = QLabel(
-            "Voce vai treinar as 26 letras do alfabeto uma por uma.\n"
+            "Você vai treinar as 26 letras do alfabeto uma por uma.\n"
             "Cada letra tem uma barra de progresso de 0 a 5.\n"
-            "A cada acerto, a barra sobe. Quando chegar em 5, a letra esta dominada."
+            "A cada acerto, a barra sobe. Quando chegar em 5, a letra está dominada."
         )
         desc.setAlignment(Qt.AlignCenter)
         desc.setWordWrap(True)
@@ -735,7 +735,7 @@ class AbaLetras(QWidget):
 
         btn_wrap = QHBoxLayout()
         btn_wrap.addStretch()
-        btn = QPushButton("Comecar a aprender caligrafia!")
+        btn = QPushButton("Começar a aprender caligrafia!")
         btn.setMinimumHeight(48)
         btn.setStyleSheet(
             f"QPushButton {{ background-color: {C_ACCENT}; color: #fff;"
@@ -836,7 +836,7 @@ class AbaPalavras(QWidget):
         self._layout_raiz.addWidget(
             cabecalho_aba(
                 "Fases de Palavras",
-                "complete uma fase para desbloquear a proxima",
+                "complete uma fase para desbloquear a próxima",
                 acao=btn_gerenciar,
             )
         )
@@ -875,9 +875,9 @@ class AbaPalavras(QWidget):
         minhas = self.estado.get("palavras_customizadas", [])
         card_custom = FaseCard(
             99, "Minhas Palavras",
-            "Treine as palavras que voce mesmo adicionou."
+            "Treine as palavras que você mesmo adicionou."
             if minhas else
-            "Adicione palavras pelo botao acima para liberar este treino.",
+            "Adicione palavras pelo botão acima para liberar este treino.",
             len(minhas),
             desbloqueada=len(minhas) > 0,
             completa=False,
@@ -949,7 +949,7 @@ class QuizCard(QFrame):
 
         info = QLabel(
             f"{quantidade} itens disponiveis" if disponivel
-            else "Indisponivel"
+            else "Indisponível"
         )
         info.setAlignment(Qt.AlignCenter)
         info.setStyleSheet(
@@ -1023,7 +1023,7 @@ class AbaQuiz(QWidget):
 
         card_letras = QuizCard(
             "letras", "ABC", "Quiz de Letras",
-            "Sorteia letras do alfabeto para voce escrever.",
+            "Sorteia letras do alfabeto para você escrever.",
             len(LETRAS), disponivel=True,
         )
         card_letras.clicked.connect(self.quiz_selecionado.emit)
@@ -1053,7 +1053,7 @@ class AbaQuiz(QWidget):
 
 
 class DicionarioWorker(QThread):
-    """Busca a definicao em segundo plano para nao travar a interface."""
+    """Busca a definição em segundo plano para não travar a interface."""
     encontrado = pyqtSignal(object)   # dict ou None
     erro = pyqtSignal(str)
 
@@ -1090,7 +1090,7 @@ class AbaDicionario(QWidget):
         raiz.setSpacing(14)
 
         raiz.addWidget(
-            cabecalho_aba("Dicionario", "busque uma palavra e adicione ao seu treino")
+            cabecalho_aba("Dicionário", "busque uma palavra e adicione ao seu treino")
         )
 
         # Barra de busca
@@ -1210,7 +1210,7 @@ class AbaDicionario(QWidget):
             self.lbl_palavra.setText("")
             self.lbl_palavra.setVisible(False)
             self.lbl_status.setText(
-                "Palavra nao encontrada no dicionario, ou sem conexao com a "
+                "Palavra não encontrada no dicionário, ou sem conexão com a "
                 "internet. Verifique a grafia e tente novamente."
             )
             self.lbl_status.setVisible(True)
@@ -1292,7 +1292,7 @@ class AbaDicionario(QWidget):
                 "palavras_customizadas", []
             )
             if ja_tem:
-                self.btn_treinar.setText("Ja esta em Minhas Palavras")
+                self.btn_treinar.setText("Já está em Minhas Palavras")
                 self.btn_treinar.setEnabled(False)
             else:
                 # 'Minhas Palavras' em negrito via HTML
@@ -1345,7 +1345,7 @@ class AbaDicionario(QWidget):
     def _on_erro(self, _mensagem):
         self.btn_buscar.setEnabled(True)
         self.lbl_status.setText(
-            "Nao foi possivel buscar agora. Verifique sua conexao e tente de novo."
+            "Não foi possível buscar agora. Verifique sua conexão e tente de novo."
         )
         self.lbl_status.setVisible(True)
 
@@ -1367,7 +1367,7 @@ class AbaDicionario(QWidget):
                 "palavras_customizadas", []
             )
             if ja_tem and self.btn_treinar.isVisible():
-                self.btn_treinar.setText("Ja esta em Minhas Palavras")
+                self.btn_treinar.setText("Já está em Minhas Palavras")
                 self.btn_treinar.setEnabled(False)
 
 
@@ -1438,7 +1438,7 @@ class AbaProgresso(QWidget):
         r = prog.resumo(self.estado)
 
         self._raiz.addWidget(
-            cabecalho_aba("Seu Progresso", "acompanhe sua evolucao na plataforma")
+            cabecalho_aba("Seu Progresso", "acompanhe sua evolução na plataforma")
         )
 
         # Conteudo rolavel (pode ficar longo)
@@ -1465,9 +1465,9 @@ class AbaProgresso(QWidget):
             ("Letras dominadas", f"{r['letras_dominadas']}/{r['letras_total']}", C_GOOD),
             ("Fases completas", f"{r['fases_completas']}/{r['fases_total']}", C_ACCENT),
             ("Minhas palavras", str(r["palavras"]), C_ACCENT),
-            ("Exercicios feitos", str(r["exercicios_feitos"]), C_TEXT),
-            ("Sequencia atual", f"{r['streak_dias']} dia(s)", C_OK),
-            ("Melhor sequencia", f"{r['streak_recorde']} dia(s)", C_OK),
+            ("Exercícios feitos", str(r["exercicios_feitos"]), C_TEXT),
+            ("Sequência atual", f"{r['streak_dias']} dia(s)", C_OK),
+            ("Melhor sequência", f"{r['streak_recorde']} dia(s)", C_OK),
         ]
         for i, (rot, val, cor) in enumerate(cartoes):
             stats_grid.addWidget(self._stat_card(rot, val, cor), i // 3, i % 3)
@@ -1475,10 +1475,10 @@ class AbaProgresso(QWidget):
         conteudo.addLayout(topo)
 
         # ── LINHA 2: mapa de calor das letras ──
-        conteudo.addWidget(self._titulo_secao("DOMINIO DO ALFABETO"))
+        conteudo.addWidget(self._titulo_secao("DOMÍNIO DO ALFABETO"))
         legenda = QLabel(
-            "Cada quadrado mostra o nivel de dominio da letra "
-            "(cinza = nao praticada, verde = dominada)."
+            "Cada quadrado mostra o nível de domínio da letra "
+            "(cinza = não praticada, verde = dominada)."
         )
         legenda.setStyleSheet(f"color: {C_MUTED}; font-size: 12px; border: none;")
         conteudo.addWidget(legenda)
@@ -1553,7 +1553,7 @@ class AbaProgresso(QWidget):
             )
             quad.setToolTip(
                 f"{letra}: dominada" if nivel >= 5
-                else f"{letra}: nivel {nivel} de 5"
+                else f"{letra}: nível {nivel} de 5"
             )
             grid.addWidget(quad, i // cols, i % cols)
         return wrap
@@ -1595,7 +1595,7 @@ class PraticarWidget(QWidget):
 
         titulo = QLabel("Praticar Caligrafia")
         titulo.setStyleSheet(f"font-size: 20px; font-weight: 800; color: {C_TEXT};")
-        sub = QLabel("Treine sua escrita com exercicios guiados")
+        sub = QLabel("Treine sua escrita com exercícios guiados")
         sub.setStyleSheet(f"color: {C_MUTED}; font-size: 14px;")
         header.addSpacing(10)
         header.addWidget(titulo)
@@ -1622,7 +1622,7 @@ class PraticarWidget(QWidget):
         self.menu.addTab(self.aba_letras, "Letras")
         self.menu.addTab(self.aba_palavras, "Palavras")
         self.menu.addTab(self.aba_quiz, "Quiz")
-        self.menu.addTab(self.aba_dicionario, "Dicionario")
+        self.menu.addTab(self.aba_dicionario, "Dicionário")
         self.menu.addTab(self.aba_progresso, "Progresso")
         self.menu.currentChanged.connect(self._aba_mudou)
 
@@ -1669,15 +1669,15 @@ class PraticarWidget(QWidget):
         self._avisar_conquistas(novas)
 
     def _avisar_conquistas(self, novas):
-        """Mostra um aviso quando o usuario desbloqueia conquistas."""
+        """Mostra um aviso quando o usuário desbloqueia conquistas."""
         if not novas:
             return
         nomes = {cid: titulo for cid, titulo, _d, _t in prog.CONQUISTAS}
         titulos = [nomes.get(cid, cid) for cid in novas]
         if len(titulos) == 1:
-            texto = f"Voce desbloqueou a conquista: {titulos[0]}!"
+            texto = f"Você desbloqueou a conquista: {titulos[0]}!"
         else:
-            texto = "Voce desbloqueou novas conquistas:\n\n" + "\n".join(
+            texto = "Você desbloqueou novas conquistas:\n\n" + "\n".join(
                 f"- {t}" for t in titulos
             )
         QMessageBox.information(self, "Nova conquista!", texto)

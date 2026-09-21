@@ -21,18 +21,18 @@ TELAS = [
     {
         "icone": "?",
         "titulo": "Como usar",
-        "texto": "Voce tem dois modos: 'Praticar Caligrafia' para treinar letras e palavras com feedback automatico, e 'Analise Individual' para transcrever e avaliar qualquer texto manuscrito.",
+        "texto": "Você tem dois modos: 'Praticar Caligrafia' para treinar letras e palavras com feedback automático, e 'Análise Individual' para transcrever e avaliar qualquer texto manuscrito.",
     },
     {
         "icone": "*",
         "titulo": "Seu progresso, salvo em qualquer lugar",
-        "texto": "Ao criar uma conta, seu progresso e salvo online. Isso permite que voce continue de onde parou em qualquer computador.",
+        "texto": "Ao criar uma conta, seu progresso é salvo online. Isso permite que você continue de onde parou em qualquer computador.",
     },
 ]
 
 
 class Bolinha(QLabel):
-    """Bolinha do indicador de pagina (embaixo da tela)."""
+    """Bolinha do indicador de página (embaixo da tela)."""
     def __init__(self, ativa):
         super().__init__()
         self.setFixedSize(10, 10)
@@ -150,7 +150,7 @@ class OnboardingWidget(QWidget):
 
         botoes.addStretch()
 
-        self.btn_avancar = QPushButton("Proximo >")
+        self.btn_avancar = QPushButton("Próximo >")
         self.btn_avancar.setObjectName("primary")
         self.btn_avancar.setMinimumWidth(160)
         self.btn_avancar.setMinimumHeight(42)
@@ -171,9 +171,9 @@ class OnboardingWidget(QWidget):
     def _atualizar_botoes(self):
         self.btn_voltar.setVisible(self.indice > 0)
         if self.indice == len(TELAS) - 1:
-            self.btn_avancar.setText("Comecar")
+            self.btn_avancar.setText("Começar")
         else:
-            self.btn_avancar.setText("Proximo >")
+            self.btn_avancar.setText("Próximo >")
 
     def _proximo(self):
         if self.indice == len(TELAS) - 1:

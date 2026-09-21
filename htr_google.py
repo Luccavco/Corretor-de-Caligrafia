@@ -61,7 +61,7 @@ def _juntar_hifenizacao(texto):
 
 
 def predict_from_path(image_path):
-    """Transcreve o texto manuscrito de uma imagem. Devolve so o texto."""
+    """Transcreve o texto manuscrito de uma imagem. Devolve só o texto."""
     response = _fazer_requisicao(image_path)
     texto = response.full_text_annotation.text.strip()
     return _juntar_hifenizacao(texto)

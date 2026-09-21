@@ -87,7 +87,7 @@ class LetraChip(QLabel):
         if letra_reconhecida and letra_reconhecida != "?":
             self.setToolTip(f"Letra: {letra_reconhecida}  (clique para ver detalhes)")
         else:
-            self.setToolTip("Letra nao identificada  (clique para ver detalhes)")
+            self.setToolTip("Letra não identificada  (clique para ver detalhes)")
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
@@ -191,7 +191,7 @@ class AnaliseWidget(QWidget):
         btn_voltar.clicked.connect(self.voltar_solicitado.emit)
         header.addWidget(btn_voltar)
 
-        titulo = QLabel("Analise Individual")
+        titulo = QLabel("Análise Individual")
         titulo.setStyleSheet(f"font-size: 20px; font-weight: 800; color: {C_TEXT};")
         sub = QLabel("Carregue uma imagem para transcrever e avaliar a caligrafia")
         sub.setStyleSheet(f"color: {C_MUTED}; font-size: 14px;")
@@ -208,7 +208,7 @@ class AnaliseWidget(QWidget):
         lbl_motor.setStyleSheet(f"color: {C_MUTED}; font-size: 13px;")
         self.combo_motor = QComboBox()
         self.combo_motor.addItem("Google Vision (online)", "google")
-        self.combo_motor.addItem("TrOCR - palavra unica (offline)", "trocr")
+        self.combo_motor.addItem("TrOCR - palavra única (offline)", "trocr")
         self.combo_motor.currentIndexChanged.connect(self._on_motor_mudou)
         header.addWidget(lbl_motor)
         header.addWidget(self.combo_motor)
@@ -250,7 +250,7 @@ class AnaliseWidget(QWidget):
         legenda = QHBoxLayout()
         legenda.setSpacing(8)
         legenda.addWidget(stat_chip(C_GOOD, "Boa"))
-        legenda.addWidget(stat_chip(C_OK, "Aceitavel"))
+        legenda.addWidget(stat_chip(C_OK, "Aceitável"))
         legenda.addWidget(stat_chip(C_BAD, "Precisa melhorar"))
         legenda.addStretch()
 
@@ -258,7 +258,7 @@ class AnaliseWidget(QWidget):
         self.btn_toggle_adicionar.setCheckable(True)
         self.btn_toggle_adicionar.setEnabled(False)
         self.btn_toggle_adicionar.setToolTip(
-            "Ative e clique na imagem para adicionar uma letra nao detectada"
+            "Ative e clique na imagem para adicionar uma letra não detectada"
         )
         self.btn_toggle_adicionar.clicked.connect(self._toggle_modo_adicionar)
         legenda.addWidget(self.btn_toggle_adicionar)
@@ -297,7 +297,7 @@ class AnaliseWidget(QWidget):
         right.setSpacing(12)
         body.addLayout(right, 42)
 
-        score_card, score_layout = make_card(None, "PONTUACAO GERAL")
+        score_card, score_layout = make_card(None, "PONTUAÇÃO GERAL")
         self.label_score = QLabel("--")
         self.label_score.setStyleSheet(
             f"font-size: 44px; font-weight: 800; color: {C_TEXT}; border: none;"
@@ -307,7 +307,7 @@ class AnaliseWidget(QWidget):
         chips = QHBoxLayout()
         chips.setSpacing(8)
         self.chip_boas = stat_chip(C_GOOD, "0 boas")
-        self.chip_ok = stat_chip(C_OK, "0 aceitaveis")
+        self.chip_ok = stat_chip(C_OK, "0 aceitáveis")
         self.chip_ruins = stat_chip(C_BAD, "0 a melhorar")
         chips.addWidget(self.chip_boas)
         chips.addWidget(self.chip_ok)
@@ -329,14 +329,14 @@ class AnaliseWidget(QWidget):
         self.btn_expandir_texto.setObjectName("ghost")
         self.btn_expandir_texto.setEnabled(False)
         self.btn_expandir_texto.setToolTip(
-            "Abre o texto em uma janela maior com verificacao ortografica"
+            "Abre o texto em uma janela maior com verificação ortográfica"
         )
         self.btn_expandir_texto.clicked.connect(self._expandir_texto)
         head_texto.addWidget(self.btn_expandir_texto)
         texto_layout.addLayout(head_texto)
         self.texto_resultado = QTextEdit()
         self.texto_resultado.setReadOnly(True)
-        self.texto_resultado.setPlaceholderText("O texto transcrito aparecera aqui...")
+        self.texto_resultado.setPlaceholderText("O texto transcrito aparecerá aqui...")
         self.texto_resultado.setMinimumHeight(140)
         texto_layout.addWidget(self.texto_resultado)
         right.addWidget(texto_card)
@@ -380,7 +380,7 @@ class AnaliseWidget(QWidget):
         self.btn_copiar = QPushButton("Copiar Texto")
         self.btn_copiar.setEnabled(False)
         self.btn_copiar.clicked.connect(self.copiar_texto)
-        self.btn_salvar = QPushButton("Salvar Relatorio")
+        self.btn_salvar = QPushButton("Salvar Relatório")
         self.btn_salvar.setEnabled(False)
         self.btn_salvar.clicked.connect(self.salvar_relatorio)
         acoes.addWidget(self.btn_copiar)
@@ -390,10 +390,10 @@ class AnaliseWidget(QWidget):
     def _on_motor_mudou(self, _idx):
         if self.combo_motor.currentData() == "trocr":
             QMessageBox.information(
-                self, "Modo palavra unica",
+                self, "Modo palavra única",
                 "O modo TrOCR (offline) analisa APENAS a primeira palavra "
                 "da imagem.\n\n"
-                "Para melhores resultados, fotografe uma unica palavra em "
+                "Para melhores resultados, fotografe uma única palavra em "
                 "letra de forma. Para textos completos, use o Google Vision.",
             )
 
@@ -412,7 +412,7 @@ class AnaliseWidget(QWidget):
     # ── Acoes basicas ───────────────────────────────────────────────
 
     def _on_desenhou(self):
-        """Primeiro traco no quadro: habilita o botao Analisar."""
+        """Primeiro traço no quadro: habilita o botão Analisar."""
         self.btn_analisar.setEnabled(True)
 
     def _voltar_ao_quadro(self):
@@ -541,7 +541,7 @@ class AnaliseWidget(QWidget):
         caixa.setWindowTitle("Texto com mais de uma palavra")
         caixa.setIcon(QMessageBox.Warning)
         caixa.setText(
-            "O modo TrOCR (offline) analisa apenas uma unica palavra por vez."
+            "O modo TrOCR (offline) analisa apenas uma única palavra por vez."
         )
         caixa.setInformativeText(
             "A imagem enviada contem uma frase ou texto com varias palavras. "
@@ -740,7 +740,7 @@ class AnaliseWidget(QWidget):
         nome = f"'{letra}'" if letra != "?" else f"L{indice + 1}"
         resposta = QMessageBox.question(
             self, "Remover letra",
-            f"Tem certeza que deseja remover a letra {nome} da analise?",
+            f"Tem certeza que deseja remover a letra {nome} da análise?",
             QMessageBox.Yes | QMessageBox.No, QMessageBox.No,
         )
         if resposta != QMessageBox.Yes:
@@ -827,11 +827,11 @@ class AnaliseWidget(QWidget):
     def atualizar_chips(self, avaliacao):
         if avaliacao is None:
             self.chip_boas.setText("0 boas")
-            self.chip_ok.setText("0 aceitaveis")
+            self.chip_ok.setText("0 aceitáveis")
             self.chip_ruins.setText("0 a melhorar")
         else:
             self.chip_boas.setText(f"{avaliacao['boas']} boas")
-            self.chip_ok.setText(f"{avaliacao['aceitaveis']} aceitaveis")
+            self.chip_ok.setText(f"{avaliacao['aceitaveis']} aceitáveis")
             self.chip_ruins.setText(f"{avaliacao['ruins']} a melhorar")
 
     # ── Modos adicionar / remover ───────────────────────────────────
@@ -854,7 +854,7 @@ class AnaliseWidget(QWidget):
         self.modo_adicionar_ativo = True
         self.label_imagem.setModoAdicionar(True)
         self.btn_toggle_adicionar.setChecked(True)
-        self.btn_toggle_adicionar.setText("Cancelar adicao")
+        self.btn_toggle_adicionar.setText("Cancelar adição")
         self.btn_toggle_adicionar.setStyleSheet(
             f"QPushButton {{ background-color: {com_alpha(C_ACCENT, 0x18)}; color: {C_ACCENT};"
             f" border: 1px solid {C_ACCENT}; border-radius: 8px;"
@@ -871,14 +871,14 @@ class AnaliseWidget(QWidget):
     def _ativar_modo_remover(self):
         self.modo_remover_ativo = True
         self.btn_toggle_remover.setChecked(True)
-        self.btn_toggle_remover.setText("Cancelar remocao")
+        self.btn_toggle_remover.setText("Cancelar remoção")
         self.btn_toggle_remover.setStyleSheet(
             f"QPushButton {{ background-color: {com_alpha(C_BAD, 0x18)}; color: {C_BAD};"
             f" border: 1px solid {C_BAD}; border-radius: 8px;"
             f" padding: 6px 12px; font-size: 12px; font-weight: 600; }}"
         )
         self.hint_detalhe.setText(
-            "MODO REMOCAO: clique em uma letra abaixo para remove-la"
+            "MODO REMOÇÃO: clique em uma letra abaixo para removê-la"
         )
         self.hint_detalhe.setStyleSheet(
             f"color: {C_BAD}; font-size: 13px; font-weight: 700; border: none;"
@@ -942,7 +942,7 @@ class AnaliseWidget(QWidget):
         resposta = QMessageBox.question(
             self, "Treinar letra",
             f"Deseja treinar a letra '{letra}' agora?\n\n"
-            "E recomendado caso o programa nao tenha detectado essa letra "
+            "É recomendado caso o programa não tenha detectado essa letra "
             "por dificuldade de leitura da sua escrita.",
             QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes,
         )
@@ -976,7 +976,7 @@ class AnaliseWidget(QWidget):
             base = os.path.splitext(os.path.basename(self.image_path))[0]
             sugestao = f"relatorio_{base}.txt"
         path, _ = QFileDialog.getSaveFileName(
-            self, "Salvar Relatorio", sugestao, "Texto (*.txt)"
+            self, "Salvar Relatório", sugestao, "Texto (*.txt)"
         )
         if path:
             conteudo = gerar_relatorio(self.texto_atual, self.avaliacao_atual)
@@ -1085,11 +1085,11 @@ class TextoExpandidoDialog(QDialog):
                     if sugestao and sugestao != pl:
                         item = QListWidgetItem(f"{p}  ->  {sugestao}")
                     else:
-                        item = QListWidgetItem(f"{p}  (sem sugestao)")
+                        item = QListWidgetItem(f"{p}  (sem sugestão)")
                     self.lista_erros.addItem(item)
         except ImportError:
             self.lista_erros.addItem(QListWidgetItem(
-                "Verificador ortografico nao instalado."
+                "Verificador ortográfico não instalado."
             ))
             self.lista_erros.addItem(QListWidgetItem(
                 "Instale com: pip install pyspellchecker"
@@ -1135,7 +1135,7 @@ class DetalheExpandidoDialog(QDialog):
             resumo = QLabel(
                 f"{self.avaliacao['total']} letras analisadas  ·  "
                 f"{self.avaliacao['boas']} boas  ·  "
-                f"{self.avaliacao['aceitaveis']} aceitaveis  ·  "
+                f"{self.avaliacao['aceitaveis']} aceitáveis  ·  "
                 f"{self.avaliacao['ruins']} precisam melhorar"
             )
             resumo.setStyleSheet(f"color: {C_MUTED}; font-size: 12px;")
