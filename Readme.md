@@ -126,6 +126,7 @@ Testes do avaliador (letras sintéticas):
 python tests/test_letra_prep.py
 python tests/test_formacao.py
 python tests/test_avaliador.py
+python tests/test_api.py
 ```
 
 ---
@@ -185,7 +186,7 @@ npm run dev
 │       ├── detalhe_letra_dialog.py, sobre_dialog.py
 │       ├── anel_progresso.py, grafico_evolucao.py
 │       └── ui_helpers.py, ui_theme.py
-├── tests/                        # test_letra_prep, test_formacao, test_avaliador
+├── tests/                        # test_letra_prep, test_formacao, test_avaliador, test_api
 ├── scripts/                      # gerar_figura2.py (artigo), testar_pipeline.py, empacotar.sh (release)
 ├── instalar.sh                   # Instalador do pacote distribuído
 ├── main_ui.py                    # Atalho de compatibilidade (chama o pacote)
