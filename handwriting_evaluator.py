@@ -4,7 +4,12 @@ Para cada letra recortada:
   legibilidade  = P(letra-alvo) da CNN (calibrada por temperatura),
                   penalizada pela probabilidade da segunda opcao
   formacao      = medidas geometricas contra moldes (formacao.py)
-  nota          = 100 * (0.6 * legibilidade + 0.4 * formacao)
+  nota          = 100 * sqrt(legibilidade) * formacao ** EXPOENTE_FORMACAO
+
+A legibilidade age como porta (uma letra irreconhecivel nunca pontua bem)
+e a formacao manda na nota: o criterio adotado e "parecer o molde de letra
+de forma", nao apenas ser legivel. Calibrado com letras sinteticas, fotos
+reais de letra de forma e desenhos propositalmente ruins do quadro.
 Categorias: Boa >= 75, Aceitavel >= 50, Ruim < 50.
 """
 
@@ -20,8 +25,8 @@ from train_cnn import construir_modelo, CLASSES
 _AQUI = os.path.dirname(os.path.abspath(__file__))
 MODELO_PATH = os.path.join(_AQUI, "modelo_caligrafia.pth")
 
-PESO_LEGIBILIDADE = 0.6
-PESO_FORMACAO = 0.4
+EXPOENTE_LEGIBILIDADE = 0.5    # raiz quadrada: porta suave
+EXPOENTE_FORMACAO = 1.25       # > 1 acentua diferencas de formacao
 NOTA_BOA = 75
 NOTA_ACEITAVEL = 50
 PENALIDADE_SEGUNDA = 0.5
@@ -102,7 +107,7 @@ def avaliar_texto(characters, alvos=None, batch_size=32):
             alvo = prevista
         legib = _legibilidade(probs, CLASSES.index(alvo))
         form = avaliar_formacao(mascaras[i], alvo)
-        nota = 100.0 * (PESO_LEGIBILIDADE * legib + PESO_FORMACAO * form["formacao"])
+        nota = 100.0 * (legib ** EXPOENTE_LEGIBILIDADE) * (form["formacao"] ** EXPOENTE_FORMACAO)
         classe = _classe_para_nota(nota)
         resultados.append({
             "indice": i + 1,

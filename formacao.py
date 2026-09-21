@@ -20,7 +20,7 @@ import letra_prep as lp
 PESOS = {"iou": 0.40, "tracos": 0.20, "proporcao": 0.15, "inclinacao": 0.10, "espessura": 0.15}
 IOU_BOM, IOU_ZERO = 0.85, 0.45   # semelhanca >= BOM vale 1.0; <= ZERO vale 0.0
 TOL_PIXELS = 2          # tolerancia de alinhamento em pixels
-PROP_TOL, PROP_ZERO = 0.15, 0.75     # desvio relativo: <= TOL vale 1, >= ZERO vale 0
+PROP_TOL, PROP_ZERO = 0.20, 1.00     # desvio relativo: <= TOL vale 1, >= ZERO vale 0
 TRACOS_ZERO, TRACOS_BOM = 0.35, 0.90  # semelhanca dos histogramas de direcao
 ORIENT_BINS = 12
 INCL_TOL, INCL_ZERO = 4.0, 20.0      # graus

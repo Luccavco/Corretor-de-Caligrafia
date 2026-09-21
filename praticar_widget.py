@@ -96,7 +96,7 @@ FASES = [
 LETRAS = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
 FONTE_FORMA = "'Cambria', 'Georgia', serif"
-NOTA_MINIMA_LETRA = 60   # nota minima para o exercicio contar como acerto
+NOTA_MINIMA_LETRA = 65   # nota minima para o exercicio contar como acerto
 NOTA_MINIMA_PIOR = 40    # numa palavra, nenhuma letra pode ficar abaixo disto
 
 

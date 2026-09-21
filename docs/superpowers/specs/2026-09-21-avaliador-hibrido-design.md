@@ -30,9 +30,20 @@ letra recortada (binária) ──┬─► CNN MobileNetV2 (26 classes EMNIST) �
                             └─► medidas geométricas vs. molde ─────────► formação (0–1)
                                      IoU, proporção, inclinação, espessura
 
-nota = 100 · (0,6 · legibilidade + 0,4 · formação)
+nota = 100 · √legibilidade · formação^1,25      (ver "Calibração" abaixo)
 categoria: Boa ≥ 75 · Aceitável 50–74 · Ruim < 50
 ```
+
+> **Calibração (após implementação, 21/09/2026).** A soma ponderada original
+> (0,6/0,4) deixava um A arredondado e legível com nota 93, porque a
+> legibilidade dominava. A fórmula multiplicativa faz a legibilidade agir como
+> porta e a formação mandar na nota. A formação ganhou uma quinta medida,
+> **direção dos traços** (histograma de orientação do contorno vs. molde), que
+> detecta curvas onde o molde tem retas; pesos finais: semelhança 0,40,
+> traços 0,20, proporção 0,15, inclinação 0,10, espessura 0,15. A semelhança
+> compara a letra esticada até a caixa do molde (a proporção é julgada à parte).
+> Exercício exige nota ≥ 65. Calibrado com letras sintéticas, as fotos reais de
+> `test_images/` e os desenhos "ruins" do quadro.
 
 ## Componentes
 

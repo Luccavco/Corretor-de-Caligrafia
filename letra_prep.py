@@ -34,7 +34,28 @@ def mascara_de_recorte(crop):
     """Recorte do image_pipeline (fundo claro, tinta escura) -> mascara."""
     if crop.ndim == 3:
         crop = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
-    return np.where(crop < 128, 255, 0).astype(np.uint8)
+    mascara = np.where(crop < 128, 255, 0).astype(np.uint8)
+    return remover_fragmentos_de_borda(mascara)
+
+
+def remover_fragmentos_de_borda(mascara, fracao=0.25):
+    """Apaga componentes pequenos (< `fracao` da area do maior) que encostam
+    na borda do recorte: sao quase sempre pedacos de letras vizinhas que a
+    segmentacao deixou entrar na caixa (ex.: um traco do O ao lado do F).
+    Partes legitimas da letra ou sao grandes ou nao tocam a borda."""
+    n, rotulos, stats, _ = cv2.connectedComponentsWithStats(mascara, connectivity=8)
+    if n <= 2:
+        return mascara
+    h, w = mascara.shape
+    areas = stats[1:, cv2.CC_STAT_AREA]
+    maior = areas.max()
+    saida = mascara.copy()
+    for i in range(1, n):
+        x, y, cw, ch, area = stats[i]
+        toca_borda = x == 0 or y == 0 or x + cw == w or y + ch == h
+        if area < fracao * maior and toca_borda:
+            saida[rotulos == i] = 0
+    return saida
 
 
 def mascara_de_emnist(img_pil):

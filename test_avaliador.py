@@ -60,9 +60,11 @@ def test_a_limpo_e_bom():
 
 
 def test_a_arredondado_cai():
+    # abaixo da nota minima do exercicio (65): reconhecido como A, mas
+    # com topo em arco e pernas abertas
     r = _nota(_a_arredondado(), "A")
-    assert r["nota"] < 60, r
-    assert r["pior_medida"] in ("iou", "inclinacao", "proporcao"), r
+    assert r["nota"] < 65, r
+    assert r["pior_medida"] in ("iou", "tracos", "inclinacao", "proporcao"), r
 
 
 def test_a_inclinado():

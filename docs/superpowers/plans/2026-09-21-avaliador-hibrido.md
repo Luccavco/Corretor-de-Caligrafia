@@ -1,6 +1,6 @@
 # Avaliador híbrido de caligrafia — plano de implementação
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Substituir o avaliador atual (que não mede qualidade) por uma nota 0–100 por letra combinando legibilidade (CNN de 26 letras, calibrada) e formação geométrica contra moldes de letra de forma.
 
@@ -758,7 +758,7 @@ git commit -m "train_cnn: classificador de 26 letras (EMNIST) com augmentation e
   - `load_modelo()`, `formatar_feedback(av)`, `gerar_relatorio(texto, av)` (mantidos)
   - Constantes: `PESO_LEGIBILIDADE = 0.6`, `PESO_FORMACAO = 0.4`, `NOTA_BOA = 75`, `NOTA_ACEITAVEL = 50`
 
-- [ ] **Step 1: Escrever o teste que falha**
+- [x] **Step 1: Escrever o teste que falha**
 
 ```python
 # test_avaliador.py
@@ -868,12 +868,12 @@ if __name__ == "__main__":
     sys.exit(1 if falhas else 0)
 ```
 
-- [ ] **Step 2: Rodar e confirmar que falha**
+- [x] **Step 2: Rodar e confirmar que falha**
 
 Run: `venv/bin/python test_avaliador.py`
 Expected: falhas por `TypeError: avaliar_texto() got an unexpected keyword argument 'alvos'` / KeyError `nota`.
 
-- [ ] **Step 3: Reescrever `handwriting_evaluator.py`**
+- [x] **Step 3: Reescrever `handwriting_evaluator.py`**
 
 ```python
 """Avaliador hibrido de caligrafia.
@@ -1052,17 +1052,17 @@ def gerar_relatorio(texto, avaliacao):
     return "\n".join(linhas)
 ```
 
-- [ ] **Step 4: Rodar e confirmar que passa**
+- [x] **Step 4: Rodar e confirmar que passa**
 
 Run: `venv/bin/python test_avaliador.py`
 Expected: 7 linhas `ok`. Se `test_a_arredondado_cai` ficar entre 60 e 65, é ajuste de constante em `formacao.py` (`IOU_BOM` ou pesos) — registrar o valor escolhido no commit. Se `test_o_no_lugar_de_a` falhar com legibilidade alta, o modelo está descalibrado: conferir a temperatura impressa no treino.
 
-- [ ] **Step 5: Rodar também o experimento manual e a pré-carga**
+- [x] **Step 5: Rodar também o experimento manual e a pré-carga**
 
 Run: `venv/bin/python test_letra_prep.py && venv/bin/python test_formacao.py && venv/bin/python -c "import handwriting_evaluator"`
 Expected: tudo `ok`; o import não pode falhar (a splash pré-carrega este módulo).
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add handwriting_evaluator.py test_avaliador.py
@@ -1083,7 +1083,7 @@ git commit -m "Avaliador hibrido: nota 0-100 = legibilidade (CNN calibrada) + fo
 - Consumes: `avaliar_texto(characters, alvos=...)`, `explicar_letra(r)`, chaves `nota`, `legibilidade`, `formacao`, `medidas`, `pior_medida`
 - Produces: `DetalheLetraDialog(..., resultado=None)` — dict da letra (opcional) para exibir nota e medidas
 
-- [ ] **Step 1: AnaliseWorker passa os alvos**
+- [x] **Step 1: AnaliseWorker passa os alvos**
 
 Em `analise_widget.py`, dentro de `AnaliseWorker.run`:
 
@@ -1106,7 +1106,7 @@ e no ramo TrOCR:
                 avaliacao = avaliar_texto(characters, alvos=alvos)
 ```
 
-- [ ] **Step 2: VerificarWorker recebe e passa o alvo**
+- [x] **Step 2: VerificarWorker recebe e passa o alvo**
 
 Em `praticar_widget.py`:
 
@@ -1135,7 +1135,7 @@ class VerificarWorker(QThread):
 
 Localizar as chamadas `VerificarWorker(` em `PainelExercicio` (`grep -n "VerificarWorker(" praticar_widget.py`) e acrescentar `alvo=self.alvo_atual()` — onde `alvo_atual()` é o método/atributo que já dá a letra ou palavra corrente do painel (conferir nome real em `mostrar_alvo_atual`; se for atributo `self.alvo`, usar ele).
 
-- [ ] **Step 3: `_validar` usa a nota**
+- [x] **Step 3: `_validar` usa a nota**
 
 Substituir o corpo de `_validar` em `PainelExercicio`:
 
@@ -1175,7 +1175,7 @@ NOTA_MINIMA_LETRA = 60   # nota minima para o exercicio contar como acerto
 NOTA_MINIMA_PIOR = 40    # numa palavra, nenhuma letra pode ficar abaixo disto
 ```
 
-- [ ] **Step 4: Diálogo de detalhe mostra nota e medidas**
+- [x] **Step 4: Diálogo de detalhe mostra nota e medidas**
 
 Em `detalhe_letra_dialog.py`, construtor: acrescentar parâmetro `resultado=None` após `modo_adicao_manual=False` e guardar `self.resultado = resultado`. Substituir `_card_avaliacao`:
 
@@ -1239,13 +1239,13 @@ Em `detalhe_letra_dialog.py`, construtor: acrescentar parâmetro `resultado=None
 
 Em `analise_widget.py`, na criação do diálogo de letra detectada (linha ~791), acrescentar `resultado=r,`.
 
-- [ ] **Step 5: Verificar com o script de captura e o app real**
+- [x] **Step 5: Verificar com o script de captura e o app real**
 
 Run: `venv/bin/python -c "import analise_widget, praticar_widget, detalhe_letra_dialog; print('imports ok')"` (offscreen: `QT_QPA_PLATFORM=offscreen`)
 Expected: `imports ok`.
 Depois abrir o app (`scratchpad/abrir_app.sh`), desenhar um A bem feito e um A arredondado no exercício da letra A e observar: o bom passa, o arredondado recebe mensagem com a nota e o motivo. Na Análise, a pontuação geral deixa de ser 100.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add analise_widget.py praticar_widget.py detalhe_letra_dialog.py
@@ -1259,7 +1259,7 @@ git commit -m "Telas usam a nota do avaliador: alvos por letra, criterio do exer
 **Files:**
 - Modify: `Readme.md` (seções "Recursos", "Como funciona a análise", "Retreinar o modelo", "Limitações conhecidas", "Estrutura do projeto")
 
-- [ ] **Step 1: Atualizar o Readme**
+- [x] **Step 1: Atualizar o Readme**
 
 Trocar, em "Recursos": `- Avaliação da qualidade de cada letra por uma rede neural (CNN MobileNetV2)` por
 `- Avaliação de cada letra com nota 0–100: legibilidade (CNN MobileNetV2 treinada no EMNIST, calibrada) combinada com formação geométrica contra moldes de letra de forma (sobreposição, proporção, inclinação, regularidade do traço)`.
@@ -1275,7 +1275,7 @@ Em "Limitações conhecidas": substituir o item da variância por
 
 Em "Estrutura do projeto": acrescentar `letra_prep.py  # normalização de letras (treino e inferência)` e `formacao.py  # medidas geométricas contra moldes`, remover `diagnostico_variancia.py`, e acrescentar os três `test_*.py`.
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add Readme.md
@@ -1283,6 +1283,13 @@ git commit -m "Readme: descreve o avaliador hibrido e remove o diagnostico de va
 ```
 
 ---
+
+## Desvios na execução
+
+- Fórmula da nota trocada para multiplicativa (`√legib · form^1,25`) e quinta medida `tracos` adicionada — ver nota de calibração no spec.
+- `letra_prep.remover_fragmentos_de_borda` e `image_pipeline.remover_linhas_pauta` adicionados: recortes de foto traziam pedaços de letras vizinhas.
+- Augmentation de largura (0,55–1,25) no treino: a CNN não reconhecia letra condensada.
+- Limitação conhecida: o "F" de `test_images/FORMA.jpg` ainda recebe um fragmento do O vizinho e é lido como E.
 
 ## Self-review
 
