@@ -300,17 +300,8 @@ class TelaInicial(QWidget):
         return card
 
     def _abrir_sobre(self):
-        QMessageBox.about(
-            self, "Sobre o Calligraphos",
-            "<h3>Calligraphos</h3>"
-            "<p>Sistema de reconhecimento e avaliação de caligrafia "
-            "desenvolvido como Trabalho de Conclusao de Curso.</p>"
-            "<p>O programa transcreve texto manuscrito usando visao "
-            "computacional (Google Cloud Vision) e avalia a qualidade da "
-            "escrita de cada letra com uma rede neural convolucional "
-            "(MobileNetV2) treinada com o dataset EMNIST.</p>"
-            "<p><b>Desenvolvido por:</b> Lucca</p>",
-        )
+        from sobre_dialog import SobreDialog
+        SobreDialog(self).exec_()
 
     def _abrir_tutorial(self):
         QMessageBox.information(
