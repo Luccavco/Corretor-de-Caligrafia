@@ -13,6 +13,7 @@ reais de letra de forma e desenhos propositalmente ruins do quadro.
 Categorias: Boa >= 75, Aceitavel >= 50, Ruim < 50.
 """
 
+import logging
 import os
 
 import numpy as np
@@ -22,6 +23,7 @@ import letra_prep as lp
 from formacao import avaliar_formacao
 from train_cnn import construir_modelo, CLASSES
 
+log = logging.getLogger(__name__)
 _AQUI = os.path.dirname(os.path.abspath(__file__))
 MODELO_PATH = os.path.join(_AQUI, "modelo_caligrafia.pth")
 
@@ -48,7 +50,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 def load_modelo():
     """Carrega a CNN de legibilidade e a temperatura de calibração."""
     global modelo_cnn, temperatura
-    print("Carregando modelo de avaliação...")
+    log.info("Carregando modelo de avaliação (%s)", MODELO_PATH)
     salvo = torch.load(MODELO_PATH, map_location=device)
     if not (isinstance(salvo, dict) and "state_dict" in salvo):
         raise RuntimeError(
@@ -59,7 +61,7 @@ def load_modelo():
     modelo_cnn.load_state_dict(salvo["state_dict"])
     modelo_cnn.to(device).eval()
     temperatura = float(salvo.get("temperatura", 1.0))
-    print("Modelo de avaliação carregado!")
+    log.info("Modelo de avaliação carregado (temperatura %.3f)", temperatura)
 
 
 def _classe_para_nota(nota):

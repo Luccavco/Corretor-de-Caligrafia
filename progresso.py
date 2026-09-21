@@ -14,7 +14,11 @@ Campos guardados:
 """
 
 from datetime import date, datetime, timedelta
+import logging
+
 from firebase_config import get_firestore
+
+log = logging.getLogger(__name__)
 
 
 def _letras_zeradas():
@@ -88,6 +92,7 @@ def carregar(uid):
             "data_feitos_hoje": dados.get("data_feitos_hoje", ""),
         }
     except Exception:
+        log.exception("Falha ao carregar o progresso do Firestore (uid=%s)", uid)
         # Falha de leitura (ex: sem internet neste instante). Devolve um
         # estado zerado apenas para a interface abrir, mas marcado como
         # "somente leitura": o _salvar recusa gravar estados assim, para
@@ -109,7 +114,7 @@ def _salvar(uid, estado):
         dados = {k: v for k, v in estado.items() if not k.startswith("_")}
         db.collection("usuarios").document(uid).set(dados, merge=True)
     except Exception:
-        pass
+        log.exception("Falha ao salvar o progresso no Firestore (uid=%s)", uid)
 
 
 def chave_letras(estilo):

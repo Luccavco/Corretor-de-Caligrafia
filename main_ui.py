@@ -5,6 +5,7 @@
 - praticar / analise / configuracoes
 """
 
+import logging
 import sys
 import os
 from PyQt5.QtWidgets import (
@@ -635,25 +636,25 @@ class PreCarregador(QThread):
         # do Google ausentes), os outros continuam sendo pre-carregados.
         # A ordem segue a do primeiro uso: torchvision e o que o clique em
         # Praticar/Analise importa; os motores de HTR vem na primeira analise.
-        def tentar(fn):
+        def tentar(nome, fn):
             try:
                 fn()
-            except Exception:
-                pass
+            except Exception as e:
+                logging.getLogger(__name__).warning("Pré-carga de %s falhou: %s", nome, e)
 
-        tentar(lambda: __import__("cv2"))
-        tentar(lambda: __import__("torch"))
-        tentar(lambda: __import__("torchvision"))
-        tentar(lambda: __import__("handwriting_evaluator"))
-        tentar(lambda: __import__("transformers"))
-        tentar(lambda: __import__("google.cloud.vision"))
+        for modulo in ("cv2", "torch", "torchvision", "handwriting_evaluator",
+                       "transformers", "google.cloud.vision"):
+            tentar(modulo, lambda m=modulo: __import__(m))
 
         def classes_trocr():
             from transformers import TrOCRProcessor, VisionEncoderDecoderModel  # noqa: F401
-        tentar(classes_trocr)
+        tentar("classes do TrOCR", classes_trocr)
 
 
 if __name__ == "__main__":
+    from log_config import configurar as _configurar_log
+    _configurar_log()
+    logging.getLogger(__name__).info("Calligraphos iniciando")
     app = QApplication(sys.argv)
     app.setStyle("Fusion")
     # O app continua rodando na bandeja mesmo com a janela escondida

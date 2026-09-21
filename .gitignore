@@ -47,3 +47,4 @@ test_images/
 
 # Config local do Claude Code (launch.json)
 .claude/
+calligraphos.log*

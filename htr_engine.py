@@ -2,6 +2,8 @@ import warnings
 import logging
 import os
 
+log = logging.getLogger(__name__)
+
 os.environ["TRANSFORMERS_VERBOSITY"] = "error"
 os.environ["HF_HUB_DISABLE_PROGRESS_BARS"] = "1"
 logging.getLogger("transformers").setLevel(logging.ERROR)
@@ -16,13 +18,13 @@ def load_model():
     """Carrega o TrOCR uma unica vez. O download acontece so na
     primeira execucao; depois o modelo fica em cache local."""
     global processor, model
-    print("Carregando modelo TrOCR...")
+    log.info("Carregando modelo TrOCR...")
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         processor = TrOCRProcessor.from_pretrained("microsoft/trocr-base-printed")
         model = VisionEncoderDecoderModel.from_pretrained("microsoft/trocr-base-printed")
     model.config.max_new_tokens = 64
-    print("Modelo carregado!")
+    log.info("Modelo TrOCR carregado")
 
 
 def predict(pil_image):
