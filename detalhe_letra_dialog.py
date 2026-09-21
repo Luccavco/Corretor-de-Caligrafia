@@ -5,7 +5,7 @@ a sugestao de treino acontece depois, em quem chamou o dialog."""
 
 from PyQt5.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
-    QFrame, QProgressBar, QLineEdit
+    QFrame, QProgressBar, QLineEdit, QWidget
 )
 from PyQt5.QtCore import Qt, pyqtSignal, QRegExp
 from PyQt5.QtGui import QRegExpValidator
@@ -25,8 +25,11 @@ class DetalheLetraDialog(QDialog):
                  indice_caractere=None,
                  estado_letras=None,
                  tem_conta=True, parent=None,
-                 modo_adicao_manual=False):
+                 modo_adicao_manual=False, resultado=None):
         super().__init__(parent)
+        # `resultado` e o dicionario da letra devolvido pelo avaliador
+        # (nota, legibilidade, formacao, medidas); None nos modos '?'/manual
+        self.resultado = resultado
         self.letra = letra or "?"
         self.indice_caractere = indice_caractere
         self.estado_letras = estado_letras
@@ -41,7 +44,7 @@ class DetalheLetraDialog(QDialog):
             "Adicionar letra manualmente" if modo_adicao_manual
             else "Detalhe da letra"
         )
-        self.setFixedSize(440, 620)
+        self.setFixedSize(440, 790 if resultado else 620)
         self.setStyleSheet(f"QDialog {{ background-color: {C_BG}; }}")
         self.setup_ui()
 
@@ -123,11 +126,46 @@ class DetalheLetraDialog(QDialog):
         )
         linha.addWidget(lbl_categoria)
         linha.addStretch()
-        lbl_conf = QLabel(f"{self.confianca:.0%} de confianca")
+        r = self.resultado
+        texto_dir = f"nota {r['nota']:.0f}/100" if r else f"{self.confianca:.0%} de confiança"
+        lbl_conf = QLabel(texto_dir)
         lbl_conf.setStyleSheet(f"color: {C_MUTED}; font-size: 12px; border: none;")
         linha.addWidget(lbl_conf)
         lay.addLayout(linha)
+
+        if r:
+            from handwriting_evaluator import explicar_letra
+            itens = [("Legibilidade", r["legibilidade"]), ("Formação", r["formacao"])]
+            nomes = {"iou": "Semelhança com o molde", "tracos": "Direção dos traços", "proporcao": "Proporção",
+                     "inclinacao": "Inclinação", "espessura": "Regularidade do traço"}
+            itens += [(nomes[k], v) for k, v in r["medidas"].items()]
+            for nome, valor in itens:
+                lay.addWidget(self._barra_medida(nome, valor))
+            if r["classe"] < 2:
+                dica = QLabel(f"Principal ponto: letra {explicar_letra(r)}.")
+                dica.setWordWrap(True)
+                dica.setStyleSheet(f"color: {C_MUTED}; font-size: 12px; border: none;")
+                lay.addWidget(dica)
         return card
+
+    def _barra_medida(self, nome, valor):
+        wrap = QWidget()
+        wrap.setObjectName("transparente")
+        lay = QHBoxLayout(wrap)
+        lay.setContentsMargins(0, 0, 0, 0)
+        lbl = QLabel(nome)
+        lbl.setFixedWidth(170)
+        lbl.setStyleSheet(f"color: {C_TEXT}; font-size: 12px; border: none;")
+        barra = QProgressBar()
+        barra.setRange(0, 100)
+        barra.setValue(int(round(valor * 100)))
+        barra.setTextVisible(False)
+        barra.setFixedHeight(8)
+        cor = C_GOOD if valor >= 0.75 else C_OK if valor >= 0.5 else C_BAD
+        barra.setStyleSheet(f"QProgressBar::chunk {{ background-color: {cor}; border-radius: 3px; }}")
+        lay.addWidget(lbl)
+        lay.addWidget(barra, 1)
+        return wrap
 
     def _card_nao_identificada(self):
         card, lay = self._make_card("LETRA NÃO IDENTIFICADA", cor_borda=f"{com_alpha(C_BAD, 0x55)}")

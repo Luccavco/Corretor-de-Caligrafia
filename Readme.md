@@ -12,7 +12,7 @@ O projeto é composto por um **aplicativo desktop** (Python + PyQt5) e um **site
 
 **Análise de caligrafia**
 - Transcrição de texto manuscrito via Google Cloud Vision (motor principal, online) ou TrOCR (motor offline para palavra única)
-- Avaliação da qualidade de cada letra por uma rede neural (CNN MobileNetV2)
+- Avaliação de cada letra com nota 0–100: legibilidade (CNN MobileNetV2 treinada no EMNIST, calibrada) combinada com formação geométrica contra moldes de letra de forma (semelhança, proporção, inclinação, regularidade do traço)
 - Imagem anotada: cada letra é contornada na cor da sua classificação (verde, âmbar ou vermelho)
 - Correção manual: adicionar, remover ou corrigir letras detectadas
 - Exportação de relatório da análise
@@ -37,7 +37,7 @@ O projeto é composto por um **aplicativo desktop** (Python + PyQt5) e um **site
 1. O usuário escreve no quadro de desenho ou carrega uma foto de texto manuscrito
 2. O pré-processamento (OpenCV) limpa e normaliza a imagem
 3. O texto é transcrito para digital (Google Vision ou TrOCR)
-4. Cada letra detectada é recortada e avaliada pela CNN
+4. Cada letra detectada é recortada e recebe uma nota: a CNN diz o quanto ela é legível como a letra esperada, e medidas geométricas comparam a forma com moldes de letra de forma
 5. O resultado aparece na tela: texto transcrito, pontuação geral, detalhe por letra e a imagem com cada letra contornada na cor da sua avaliação
 
 ---
@@ -98,11 +98,13 @@ Faça login (ou crie uma conta), e use os dois modos principais:
 ```
 python train_cnn.py
 ```
-Baixa o dataset EMNIST e treina a CNN de avaliação. Os limiares de qualidade são calibrados automaticamente a partir da distribuição real dos dados. O modelo é salvo em `modelo_caligrafia.pth`.
+Baixa o dataset EMNIST (split *letters*, 26 classes) e treina a CNN de legibilidade com augmentation de espessura, rotação, escala e cisalhamento (para aproximar o EMNIST das letras reais). Ao final calibra a confiança (temperatura) e imprime a acurácia de validação. O modelo é salvo em `modelo_caligrafia.pth`.
 
-Para inspecionar a calibração antes de treinar:
+Testes do avaliador (letras sintéticas):
 ```
-python diagnostico_variancia.py
+python test_letra_prep.py
+python test_formacao.py
+python test_avaliador.py
 ```
 
 ---
@@ -135,9 +137,13 @@ npm run dev
 ├── image_pipeline.py         # Pré-processamento e segmentação (OpenCV)
 ├── htr_google.py             # Transcrição via Google Cloud Vision
 ├── htr_engine.py             # Transcrição via TrOCR (offline)
-├── handwriting_evaluator.py  # Avaliação de caligrafia em lote (CNN)
-├── train_cnn.py              # Treino da CNN
-├── diagnostico_variancia.py  # Inspeção da calibração de qualidade
+├── letra_prep.py             # Normalização de letras (treino e inferência)
+├── formacao.py               # Medidas geométricas contra moldes de letra de forma
+├── handwriting_evaluator.py  # Nota por letra: legibilidade (CNN) + formação
+├── train_cnn.py              # Treino da CNN de legibilidade (EMNIST letters)
+├── test_letra_prep.py        # Testes: normalização
+├── test_formacao.py          # Testes: medidas geométricas
+├── test_avaliador.py         # Testes: avaliador ponta a ponta
 │
 ├── auth_service.py           # Autenticação e sessão persistente
 ├── firebase_config.py        # Configuração do Firebase
@@ -162,7 +168,7 @@ Para o reconhecimento, o Google Cloud Vision é o motor principal, por lidar bem
 ## Limitações conhecidas
 
 - O sistema foi desenvolvido para texto em **letra de forma**
-- A avaliação de caligrafia é baseada na variância de pixels da letra; a calibração usa o dataset EMNIST, então letras reais (mais grossas que as do EMNIST) podem ainda ser avaliadas de forma mais branda que o ideal
+- A parcela de formação da nota compara a letra com moldes de fontes de letra de forma; estilos pessoais válidos podem perder pontos. Os pesos e limiares ficam em constantes no topo de `formacao.py` e `handwriting_evaluator.py`
 - O motor offline (TrOCR) é otimizado para inglês e serve apenas para palavra única; para texto em português e frases, use o Google Vision
 - Fotos com iluminação muito irregular ou sombra forte podem reduzir a precisão da transcrição
 
@@ -170,4 +176,4 @@ Para o reconhecimento, o Google Cloud Vision é o motor principal, por lidar bem
 
 ## Tecnologias utilizadas
 
-O projeto foi construído com Python 3.11. O OpenCV cuida do pré-processamento das imagens (binarização, correção de perspectiva e segmentação de linhas e caracteres). A transcrição usa o Google Cloud Vision (principal) e o TrOCR da Microsoft via Transformers do Hugging Face (offline). A avaliação de caligrafia usa PyTorch com a arquitetura MobileNetV2 e Transfer Learning, treinada sobre o EMNIST. A interface é feita em PyQt5, a autenticação e o armazenamento em nuvem usam o Firebase (Authentication e Firestore), e o site complementar é feito em React com Vite.
+O projeto foi construído com Python 3.11. O OpenCV cuida do pré-processamento das imagens (binarização, correção de perspectiva e segmentação de linhas e caracteres). A transcrição usa o Google Cloud Vision (principal) e o TrOCR da Microsoft via Transformers do Hugging Face (offline). A avaliação de caligrafia combina uma CNN (PyTorch, MobileNetV2 com Transfer Learning, treinada para reconhecer as 26 letras do EMNIST e calibrada por temperatura) com medidas geométricas em OpenCV contra moldes de letra de forma. A interface é feita em PyQt5, a autenticação e o armazenamento em nuvem usam o Firebase (Authentication e Firestore), e o site complementar é feito em React com Vite.

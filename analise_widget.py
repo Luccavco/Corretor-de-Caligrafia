@@ -45,7 +45,7 @@ class AnaliseWorker(QThread):
                 texto, simbolos = predict_detailed(self.image_path)
                 boxes = [(s["x"], s["y"], s["w"], s["h"]) for s in simbolos]
                 characters = characters_from_boxes(self.image_path, boxes)
-                avaliacao = avaliar_texto(characters)
+                avaliacao = avaliar_texto(characters, alvos=[s["letra"] for s in simbolos])
                 letras = {i: s["letra"] for i, s in enumerate(simbolos)}
                 anotada = annotate_from_characters(self.image_path, avaliacao)
                 self.finished.emit(texto, avaliacao, anotada, letras)
@@ -63,7 +63,9 @@ class AnaliseWorker(QThread):
                     return
                 pil_word, characters = dados
                 texto = predict(pil_word).strip().strip(".")
-                avaliacao = avaliar_texto(characters)
+                letras_texto = [c for c in texto.upper() if "A" <= c <= "Z"]
+                alvos = letras_texto if len(letras_texto) == len(characters) else None
+                avaliacao = avaliar_texto(characters, alvos=alvos)
                 anotada = annotate_image(self.image_path, avaliacao)
                 self.finished.emit(texto, avaliacao, anotada, None)
         except Exception as e:
@@ -793,6 +795,7 @@ class AnaliseWidget(QWidget):
             categoria=r["categoria"],
             classe=r["classe"],
             confianca=r["confianca"],
+            resultado=r,
             indice_caractere=indice,
             estado_letras=self._estado_letras(),
             tem_conta=self.tem_conta,

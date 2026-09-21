@@ -31,7 +31,26 @@ def binarize(gray):
     # Fecha pequenos buracos no traco da caneta
     kernel = np.ones((2, 2), np.uint8)
     binary = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, kernel)
-    return binary
+    return remover_linhas_pauta(binary)
+
+
+def remover_linhas_pauta(binary, fracao_largura=0.6):
+    """Apaga linhas horizontais longas (pauta de caderno) da imagem
+    binarizada. Uma linha de pauta atravessa boa parte da largura da foto;
+    nenhum traco de letra faz isso, entao tudo que sobrevive a uma abertura
+    morfologica horizontal desse comprimento e pauta, nao escrita."""
+    h, w = binary.shape[:2]
+    comprimento = max(40, int(w * fracao_largura))
+    if comprimento >= w:
+        return binary
+    tinta = cv2.bitwise_not(binary)
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (comprimento, 1))
+    linhas = cv2.morphologyEx(tinta, cv2.MORPH_OPEN, kernel)
+    if not linhas.any():
+        return binary
+    # engrossa um pouco a linha detectada para levar junto as bordas serrilhadas
+    linhas = cv2.dilate(linhas, np.ones((5, 1), np.uint8))
+    return cv2.bitwise_or(binary, linhas)
 
 
 def correct_perspective(image):

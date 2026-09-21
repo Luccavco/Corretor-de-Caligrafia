@@ -53,6 +53,11 @@ def augmentar(mascara, rng):
     M[0, 2] += rng.uniform(-2, 2)
     M[1, 2] += rng.uniform(-2, 2)
     m = cv2.warpAffine(m, M, (w, h), flags=cv2.INTER_NEAREST, borderValue=0)
+    # largura: letra condensada (estreita) ou estendida, estilo comum em
+    # escrita real e raro no EMNIST. A normalizacao posterior recentra.
+    fator_x = rng.uniform(0.55, 1.25)
+    nova_w = max(4, int(round(w * fator_x)))
+    m = cv2.resize(m, (nova_w, h), interpolation=cv2.INTER_NEAREST)
     return m
 
 

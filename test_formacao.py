@@ -64,8 +64,8 @@ def test_avaliar_formacao_ordena_casos():
     assert n_limpo > 0.85, n_limpo
     assert n_torto < 0.65 and n_rab < 0.65, (n_torto, n_rab)
     r = fm.avaliar_formacao(torto, "A")
-    assert set(r["medidas"]) == {"iou", "proporcao", "inclinacao", "espessura"}
-    assert r["pior"] in ("iou", "inclinacao"), r
+    assert set(r["medidas"]) == {"iou", "tracos", "proporcao", "inclinacao", "espessura"}
+    assert r["pior"] in ("iou", "inclinacao", "tracos"), r
 
 
 if __name__ == "__main__":

@@ -1,89 +1,127 @@
-import os
-import torch
-import torchvision.transforms as transforms
-from torchvision import models
-import torch.nn as nn
-from PIL import Image
-import numpy as np
+"""Avaliador hibrido de caligrafia.
 
-# Caminho do modelo resolvido a partir da pasta deste arquivo, para
-# funcionar nao importa de onde o programa foi iniciado.
+Para cada letra recortada:
+  legibilidade  = P(letra-alvo) da CNN (calibrada por temperatura),
+                  penalizada pela probabilidade da segunda opcao
+  formacao      = medidas geometricas contra moldes (formacao.py)
+  nota          = 100 * (0.6 * legibilidade + 0.4 * formacao)
+Categorias: Boa >= 75, Aceitavel >= 50, Ruim < 50.
+"""
+
+import os
+
+import numpy as np
+import torch
+
+import letra_prep as lp
+from formacao import avaliar_formacao
+from train_cnn import construir_modelo, CLASSES
+
 _AQUI = os.path.dirname(os.path.abspath(__file__))
 MODELO_PATH = os.path.join(_AQUI, "modelo_caligrafia.pth")
 
-modelo_cnn = None
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+PESO_LEGIBILIDADE = 0.6
+PESO_FORMACAO = 0.4
+NOTA_BOA = 75
+NOTA_ACEITAVEL = 50
+PENALIDADE_SEGUNDA = 0.5
 
-CATEGORIAS = {
-    0: "Ruim",
-    1: "Aceitável",
-    2: "Boa",
+CATEGORIAS = {0: "Ruim", 1: "Aceitável", 2: "Boa"}
+_EXPLICACOES = {
+    "iou": "pouco parecida com o molde",
+    "tracos": "com curvas ou ângulos onde o molde tem traços retos",
+    "proporcao": "com proporção fora do molde (muito larga ou estreita)",
+    "inclinacao": "muito inclinada",
+    "espessura": "com traço irregular",
 }
 
-_transform = transforms.Compose([
-    transforms.Resize((224, 224)),
-    transforms.ToTensor(),
-])
+modelo_cnn = None
+temperatura = 1.0
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 def load_modelo():
-    """Carrega a CNN treinada (modelo_caligrafia.pth) uma única vez."""
-    global modelo_cnn
+    """Carrega a CNN de legibilidade e a temperatura de calibração."""
+    global modelo_cnn, temperatura
     print("Carregando modelo de avaliação...")
-    modelo_cnn = models.mobilenet_v2(weights=None)
-    modelo_cnn.classifier[1] = nn.Linear(modelo_cnn.last_channel, 3)
-    modelo_cnn.load_state_dict(
-        torch.load(MODELO_PATH, map_location=device)
-    )
-    modelo_cnn.to(device)
-    modelo_cnn.eval()
+    salvo = torch.load(MODELO_PATH, map_location=device)
+    if not (isinstance(salvo, dict) and "state_dict" in salvo):
+        raise RuntimeError(
+            "modelo_caligrafia.pth está no formato antigo (3 classes). "
+            "Rode 'python train_cnn.py' para treinar o avaliador novo."
+        )
+    modelo_cnn = construir_modelo(pretreinado=False)
+    modelo_cnn.load_state_dict(salvo["state_dict"])
+    modelo_cnn.to(device).eval()
+    temperatura = float(salvo.get("temperatura", 1.0))
     print("Modelo de avaliação carregado!")
 
 
-def _preparar_tensor(char_img_array):
-    img = Image.fromarray(char_img_array).convert("RGB")
-    return _transform(img)
+def _classe_para_nota(nota):
+    if nota >= NOTA_BOA:
+        return 2
+    if nota >= NOTA_ACEITAVEL:
+        return 1
+    return 0
 
 
-def avaliar_texto(characters, batch_size=32):
-    """Avalia todas as letras de uma vez, em lotes (mais rapido que
-    uma chamada por letra, principalmente em textos longos).
+def _legibilidade(probs, alvo_idx):
+    p_alvo = float(probs[alvo_idx])
+    outros = probs.clone()
+    outros[alvo_idx] = 0.0
+    p_segunda = float(outros.max())
+    return p_alvo * (1.0 - PENALIDADE_SEGUNDA * p_segunda)
 
-    Recebe a lista de caracteres do image_pipeline e devolve um
-    dicionario com o resultado por letra e a pontuacao geral."""
+
+def avaliar_texto(characters, alvos=None, batch_size=32):
+    """Avalia as letras em lote. `alvos` e uma lista opcional de letras
+    esperadas (A-Z ou None por posicao); sem alvo, usa a letra prevista."""
     if not characters:
         return None
     if modelo_cnn is None:
         load_modelo()
+    if alvos is None:
+        alvos = [None] * len(characters)
 
-    tensores = torch.stack([_preparar_tensor(c[4]) for c in characters])
+    mascaras = [lp.normalizar_mascara(lp.mascara_de_recorte(c[4])) for c in characters]
+    tensores = torch.stack([lp.tensor_de_mascara(m) for m in mascaras])
 
-    classes = []
-    confiancas = []
+    probs_todos = []
     with torch.no_grad():
         for i in range(0, len(tensores), batch_size):
-            lote = tensores[i:i + batch_size].to(device)
-            saida = modelo_cnn(lote)
-            probs = torch.softmax(saida, dim=1)
-            conf, cls = torch.max(probs, dim=1)
-            classes.extend(cls.cpu().tolist())
-            confiancas.extend(conf.cpu().tolist())
+            logits = modelo_cnn(tensores[i:i + batch_size].to(device))
+            probs_todos.append(torch.softmax(logits / temperatura, dim=1).cpu())
+    probs_todos = torch.cat(probs_todos)
 
     resultados = []
     for i, (x, y, w, h, _) in enumerate(characters):
+        probs = probs_todos[i]
+        prevista = CLASSES[int(probs.argmax())]
+        alvo = (alvos[i] or "").upper()
+        if len(alvo) != 1 or alvo not in CLASSES:
+            alvo = prevista
+        legib = _legibilidade(probs, CLASSES.index(alvo))
+        form = avaliar_formacao(mascaras[i], alvo)
+        nota = 100.0 * (PESO_LEGIBILIDADE * legib + PESO_FORMACAO * form["formacao"])
+        classe = _classe_para_nota(nota)
         resultados.append({
             "indice": i + 1,
             "posicao": (x, y, w, h),
-            "classe": classes[i],
-            "categoria": CATEGORIAS[classes[i]],
-            "confianca": round(confiancas[i], 3),
+            "nota": round(nota, 1),
+            "classe": classe,
+            "categoria": CATEGORIAS[classe],
+            "confianca": round(legib, 3),
+            "letra_alvo": alvo,
+            "letra_prevista": prevista,
+            "legibilidade": round(legib, 3),
+            "formacao": round(form["formacao"], 3),
+            "medidas": form["medidas"],
+            "pior_medida": form["pior"],
         })
-
-    pontuacao = np.mean([r["classe"] for r in resultados]) / 2 * 100
 
     return {
         "caracteres": resultados,
-        "pontuacao_geral": round(pontuacao, 1),
+        "pontuacao_geral": round(float(np.mean([r["nota"] for r in resultados])), 1),
         "total": len(resultados),
         "boas": sum(1 for r in resultados if r["classe"] == 2),
         "aceitaveis": sum(1 for r in resultados if r["classe"] == 1),
@@ -91,46 +129,47 @@ def avaliar_texto(characters, batch_size=32):
     }
 
 
+def explicar_letra(r):
+    """Frase curta dizendo o principal problema da letra."""
+    if r["legibilidade"] < 0.4 and r["letra_prevista"] != r["letra_alvo"]:
+        return f"parecendo '{r['letra_prevista']}'"
+    if r["legibilidade"] < 0.4:
+        return "difícil de reconhecer"
+    return _EXPLICACOES.get(r["pior_medida"], "com formação irregular")
+
+
 def formatar_feedback(avaliacao):
     """Feedback em texto simples para terminal e testes."""
     if avaliacao is None:
         return "Nenhum caractere detectado."
-
-    linhas = []
-    linhas.append(f"Pontuacao geral: {avaliacao['pontuacao_geral']}/100")
-    linhas.append(f"Caracteres analisados: {avaliacao['total']}")
-    linhas.append("-" * 32)
-    linhas.append(f"Boa formação:     {avaliacao['boas']} letra(s)")
-    linhas.append(f"Aceitável:        {avaliacao['aceitaveis']} letra(s)")
-    linhas.append(f"Precisa melhorar: {avaliacao['ruins']} letra(s)")
-
+    linhas = [
+        f"Pontuação geral: {avaliacao['pontuacao_geral']}/100",
+        f"Caracteres analisados: {avaliacao['total']}",
+        "-" * 32,
+        f"Boa formação:     {avaliacao['boas']} letra(s)",
+        f"Aceitável:        {avaliacao['aceitaveis']} letra(s)",
+        f"Precisa melhorar: {avaliacao['ruins']} letra(s)",
+    ]
     ruins = [r for r in avaliacao["caracteres"] if r["classe"] == 0]
     if ruins:
         linhas.append("-" * 32)
         linhas.append("Letras que precisam de atenção:")
         for r in ruins:
-            linhas.append(f"  Letra {r['indice']} (confianca {r['confianca']:.0%})")
-
+            linhas.append(f"  Letra {r['indice']} ({r['nota']:.0f}/100): {explicar_letra(r)}")
     return "\n".join(linhas)
 
 
 def gerar_relatorio(texto, avaliacao):
     """Relatório completo em texto, pronto para salvar em arquivo."""
-    linhas = []
-    linhas.append("=" * 48)
-    linhas.append("RELATÓRIO DE ANÁLISE DE CALIGRAFIA")
-    linhas.append("=" * 48)
-    linhas.append("")
-    linhas.append("TEXTO RECONHECIDO:")
-    linhas.append(texto if texto else "(nenhum texto reconhecido)")
-    linhas.append("")
-    linhas.append(formatar_feedback(avaliacao))
-    linhas.append("")
+    linhas = ["=" * 48, "RELATÓRIO DE ANÁLISE DE CALIGRAFIA", "=" * 48, "",
+              "TEXTO RECONHECIDO:", texto if texto else "(nenhum texto reconhecido)", "",
+              formatar_feedback(avaliacao), ""]
     if avaliacao:
         linhas.append("DETALHE POR LETRA:")
         for r in avaliacao["caracteres"]:
             linhas.append(
-                f"  Letra {r['indice']:>3}  {r['categoria']:<10}"
-                f" confianca {r['confianca']:.0%}"
+                f"  Letra {r['indice']:>3}  {r['letra_alvo']}  {r['categoria']:<10}"
+                f" nota {r['nota']:>5.1f}  legibilidade {r['legibilidade']:.0%}"
+                f"  formação {r['formacao']:.0%}"
             )
     return "\n".join(linhas)

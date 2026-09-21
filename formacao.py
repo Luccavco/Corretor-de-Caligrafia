@@ -1,8 +1,10 @@
 """Parcela geometrica da nota: compara a letra desenhada com moldes de
 letra de forma renderizados de fontes do sistema.
 
-Quatro medidas, cada uma mapeada para 0..1 (1 = dentro do esperado):
+Cinco medidas, cada uma mapeada para 0..1 (1 = dentro do esperado):
   iou         semelhanca de forma com o melhor molde (F1 com tolerancia de TOL_PIXELS)
+  tracos      direcoes dos tracos (histograma de orientacao do contorno) vs. o molde:
+              pega curvas onde deveria haver retas (topo arredondado de um A)
   proporcao   razao altura/largura vs. a do molde
   inclinacao  inclinacao media dos tracos verticais vs. a do molde
   espessura   regularidade da largura do traco (nao depende do molde)
@@ -15,10 +17,12 @@ import numpy as np
 
 import letra_prep as lp
 
-PESOS = {"iou": 0.45, "proporcao": 0.20, "inclinacao": 0.15, "espessura": 0.20}
+PESOS = {"iou": 0.40, "tracos": 0.20, "proporcao": 0.15, "inclinacao": 0.10, "espessura": 0.15}
 IOU_BOM, IOU_ZERO = 0.85, 0.45   # semelhanca >= BOM vale 1.0; <= ZERO vale 0.0
 TOL_PIXELS = 2          # tolerancia de alinhamento em pixels
-PROP_TOL, PROP_ZERO = 0.10, 0.50     # desvio relativo: <= TOL vale 1, >= ZERO vale 0
+PROP_TOL, PROP_ZERO = 0.15, 0.75     # desvio relativo: <= TOL vale 1, >= ZERO vale 0
+TRACOS_ZERO, TRACOS_BOM = 0.35, 0.90  # semelhanca dos histogramas de direcao
+ORIENT_BINS = 12
 INCL_TOL, INCL_ZERO = 4.0, 20.0      # graus
 ESP_TOL, ESP_ZERO = 0.25, 0.70       # coeficiente de variacao da espessura
 ESCALAS = (0.9, 1.0, 1.1)
@@ -84,13 +88,30 @@ def _f1_tolerante(mascara, molde, tol):
     return 2 * prec * cob / max(prec + cob, 1e-9)
 
 
+def _ajustar_ao_molde(mascara, molde):
+    """Estica/encolhe a letra para ocupar exatamente a caixa do molde.
+    Assim a semelhanca compara so a FORMA; a proporcao altura/largura e
+    julgada a parte (medir_proporcao), sem punir duas vezes uma letra
+    estreita ou larga."""
+    cl, cm = lp.caixa_tinta(mascara), lp.caixa_tinta(molde)
+    if cl is None or cm is None:
+        return mascara
+    x, y, w, h = cl
+    mx, my, mw, mh = cm
+    recorte = cv2.resize(mascara[y:y + h, x:x + w], (mw, mh), interpolation=cv2.INTER_NEAREST)
+    saida = np.zeros_like(molde)
+    saida[my:my + mh, mx:mx + mw] = recorte
+    return saida
+
+
 def medir_iou(mascara, molde):
     """Semelhanca de forma com o molde (0..1), melhor entre pequenos
     ajustes de escala e deslocamento. Chama-se 'iou' por compatibilidade
     com o restante do codigo; e um F1 tolerante, mais criterioso que a
     intersecao/uniao de mascaras dilatadas para manchas densas."""
+    ajustada = _ajustar_ao_molde(mascara, molde)
     melhor = 0.0
-    for v in _variantes(mascara):
+    for v in _variantes(ajustada):
         melhor = max(melhor, _f1_tolerante(v, molde, TOL_PIXELS))
     return melhor
 
@@ -144,6 +165,31 @@ def medir_inclinacao(mascara, molde):
     return _rampa(desvio, INCL_TOL, INCL_ZERO)
 
 
+def _histograma_orientacao(mascara):
+    """Distribuicao (normalizada) das direcoes dos segmentos do contorno,
+    ponderada pelo comprimento."""
+    hist = np.zeros(ORIENT_BINS)
+    contornos, _ = cv2.findContours(mascara, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
+    for c in contornos:
+        pts = cv2.approxPolyDP(c, 1.5, True).reshape(-1, 2)
+        for i in range(len(pts)):
+            x0, y0 = pts[i]
+            x1, y1 = pts[(i + 1) % len(pts)]
+            comp = math.hypot(float(x1 - x0), float(y1 - y0))
+            if comp < 2:
+                continue
+            ang = math.degrees(math.atan2(float(y1 - y0), float(x1 - x0))) % 180
+            hist[int(ang / 180 * ORIENT_BINS) % ORIENT_BINS] += comp
+    return hist / max(hist.sum(), 1e-9)
+
+
+def medir_tracos(mascara, molde):
+    """Semelhanca entre as direcoes dos tracos da letra e do molde (0..1)."""
+    a, b = _histograma_orientacao(mascara), _histograma_orientacao(molde)
+    sem = 1.0 - 0.5 * float(np.abs(a - b).sum())
+    return _rampa_sobe(sem, TRACOS_ZERO, TRACOS_BOM)
+
+
 def medir_espessura(mascara):
     """Coeficiente de variacao da largura do traco ao longo da crista."""
     if not mascara.any():
@@ -161,7 +207,7 @@ def avaliar_formacao(mascara_norm, letra):
     moldes = moldes_da_letra(letra)
     if not moldes or not mascara_norm.any():
         esp = medir_espessura(mascara_norm)
-        return {"formacao": esp, "medidas": {"iou": 0.0, "proporcao": 0.0,
+        return {"formacao": esp, "medidas": {"iou": 0.0, "tracos": 0.0, "proporcao": 0.0,
                                              "inclinacao": 0.0, "espessura": esp},
                 "pior": "iou"}
     ious = [medir_iou(mascara_norm, m) for m in moldes]
@@ -169,6 +215,7 @@ def avaliar_formacao(mascara_norm, letra):
     molde = moldes[melhor]
     medidas = {
         "iou": _rampa_sobe(ious[melhor], IOU_ZERO, IOU_BOM),
+        "tracos": medir_tracos(mascara_norm, molde),
         "proporcao": medir_proporcao(mascara_norm, molde),
         "inclinacao": medir_inclinacao(mascara_norm, molde),
         "espessura": medir_espessura(mascara_norm),

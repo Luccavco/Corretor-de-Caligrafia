@@ -96,15 +96,18 @@ FASES = [
 LETRAS = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
 FONTE_FORMA = "'Cambria', 'Georgia', serif"
+NOTA_MINIMA_LETRA = 60   # nota minima para o exercicio contar como acerto
+NOTA_MINIMA_PIOR = 40    # numa palavra, nenhuma letra pode ficar abaixo disto
 
 
 class VerificarWorker(QThread):
     finished = pyqtSignal(str, object)
     error = pyqtSignal(str)
 
-    def __init__(self, image_path, apagar_ao_fim=False):
+    def __init__(self, image_path, alvo="", apagar_ao_fim=False):
         super().__init__()
         self.image_path = image_path
+        self.alvo = alvo
         # Quando a imagem e um PNG temporario do quadro, apaga apos usar
         # para nao acumular arquivos desenho_*.png em /tmp.
         self.apagar_ao_fim = apagar_ao_fim
@@ -114,7 +117,10 @@ class VerificarWorker(QThread):
             from htr_google import predict_from_path
             texto = predict_from_path(self.image_path)
             _, characters, _ = process(self.image_path)
-            avaliacao = avaliar_texto(characters)
+            # A letra-alvo entra na nota (legibilidade e molde); so quando o
+            # numero de letras segmentadas bate com o esperado
+            alvos = list(self.alvo) if len(self.alvo) == len(characters) else None
+            avaliacao = avaliar_texto(characters, alvos=alvos)
             self.finished.emit(texto, avaliacao)
         except Exception as e:
             self.error.emit(str(e))
@@ -622,7 +628,8 @@ class PainelExercicio(QWidget):
         self.btn_pular.setEnabled(False)
         self.progress.setVisible(True)
         self.label_feedback.setText("Analisando sua tentativa...")
-        self.worker = VerificarWorker(path, apagar_ao_fim=temporario)
+        alvo = self.alvos[0] if self.modo == "letra" else self.alvos[self.indice]
+        self.worker = VerificarWorker(path, alvo=alvo, apagar_ao_fim=temporario)
         self.worker.finished.connect(self.on_verificado)
         self.worker.error.connect(self.on_erro)
         self.worker.start()
@@ -668,6 +675,7 @@ class PainelExercicio(QWidget):
         )
 
     def _validar(self, alvo, texto, avaliacao):
+        from handwriting_evaluator import explicar_letra
         limpo = "".join(c for c in (texto or "").upper() if c.isalpha())
         if self.modo == "letra":
             if not limpo:
@@ -676,16 +684,21 @@ class PainelExercicio(QWidget):
                 return False, f"O sistema reconheceu '{limpo[0]}', mas o alvo era '{alvo}'."
             if not avaliacao or avaliacao["total"] == 0:
                 return False, "Não consegui detectar o traço. Tente uma foto mais clara."
-            if avaliacao["caracteres"][0]["classe"] == 0:
-                return False, "A letra foi reconhecida, mas a formação está muito irregular."
+            r = avaliacao["caracteres"][0]
+            if r["nota"] < NOTA_MINIMA_LETRA:
+                return False, (f"Reconheci o '{alvo}', mas a letra está {explicar_letra(r)} "
+                               f"(nota {r['nota']:.0f}/100). Tente de novo.")
             return True, ""
         else:
             if limpo != alvo:
                 return False, f"Reconhecido: '{texto.strip() if texto else '(nada)'}'. Esperado: '{alvo}'."
             if not avaliacao or avaliacao["total"] == 0:
                 return False, "Não consegui detectar as letras. Tente uma foto mais clara."
-            if avaliacao["ruins"] > len(alvo) * 0.3:
-                return False, f"Palavra correta, mas {avaliacao['ruins']} letra(s) com formação ruim."
+            notas = [c["nota"] for c in avaliacao["caracteres"]]
+            if avaliacao["pontuacao_geral"] < NOTA_MINIMA_LETRA or min(notas) < NOTA_MINIMA_PIOR:
+                pior = min(avaliacao["caracteres"], key=lambda c: c["nota"])
+                return False, (f"Palavra correta, mas a letra '{pior['letra_alvo']}' está "
+                               f"{explicar_letra(pior)} (nota {pior['nota']:.0f}/100).")
             return True, ""
 
 
