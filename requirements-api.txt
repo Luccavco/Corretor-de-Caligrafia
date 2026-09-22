@@ -1,0 +1,11 @@
+# Dependencias do servico HTTP do avaliador (calligraphos.api), sem a
+# interface grafica. O torch/torchvision CPU sao instalados a parte, pelo
+# indice do PyTorch (ver Dockerfile), para a imagem nao trazer CUDA.
+opencv-python-headless==4.13.0.92
+numpy==2.4.4
+pillow==12.2.0
+google-cloud-vision==3.15.0
+transformers==5.5.3
+fastapi==0.141.1
+uvicorn[standard]==0.53.0
+python-multipart==0.0.32

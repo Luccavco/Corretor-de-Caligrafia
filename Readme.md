@@ -137,7 +137,7 @@ O avaliador também pode ser usado por outros clientes (o site instalado no celu
 ```
 python -m calligraphos.api
 ```
-Sobe em `http://localhost:8000` (documentação interativa em `/docs`). `POST /avaliar` recebe a imagem e a letra/palavra esperada e devolve as notas por letra, o texto, a imagem anotada e o mapa de diferenças.
+Sobe em `http://localhost:8000` (documentação interativa em `/docs`). Para hospedar, há um `Dockerfile` (CPU, sem interface gráfica) e o guia em `../HOSPEDAGEM.md`. `POST /avaliar` recebe a imagem e a letra/palavra esperada e devolve as notas por letra, o texto, a imagem anotada e o mapa de diferenças.
 
 ---
 
