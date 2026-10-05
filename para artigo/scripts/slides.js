@@ -1,6 +1,6 @@
 // Slides da apresentacao do TCC Calligraphos (~10 min, 14 slides)
 const pptxgen = require("pptxgenjs");
-const FIGS = "/tmp/claude-1000/-home-luccavco-Calligraphos/aa2c64d4-2803-4a0b-92aa-5dcef1cd3e7f/scratchpad/figs/";
+const FIGS = require("path").join(__dirname, "..", "entrega", "figuras") + "/";
 const OUT = process.argv[2];
 
 const pres = new pptxgen();
@@ -62,7 +62,7 @@ let n = 0;
   const cards = [
     ["Habilidade que continua importando", "Alfabetização, coordenação motora, provas, formulários e anotações ainda dependem da escrita à mão."],
     ["Está piorando", "Teclados e telas reduziram a prática; letra ilegível gera erros de interpretação e prejudica a avaliação do aluno."],
-    ["Corrigir é caro e subjetivo", "Depende do professor ou da autoavaliação — trabalhoso, não escalável e sem parâmetro objetivo."],
+    ["Corrigir é caro e subjetivo", "Depende do professor ou da autoavaliação: trabalhoso, não escalável e sem parâmetro objetivo."],
   ];
   cards.forEach(([t, d], i) => {
     const x = 0.5 + i * 3.1;
@@ -81,10 +81,10 @@ let n = 0;
   titulo(s, "A lacuna e o objetivo");
   cartao(s, 0.5, 1.35, 4.35, 3.5);
   s.addText("O que existe", { x: 0.8, y: 1.55, w: 3.8, h: 0.4, fontFace: COR, fontSize: 16, bold: true, color: C.texto, isTextBox: true, margin: 0 });
-  bullets(s, ["Apps de idiomas (Duolingo, WaniKani): vocabulário, gramática, pronúncia — não a letra", "Ferramentas de HTR/OCR: transcrevem o que foi escrito, sem julgar como foi escrito"], 0.8, 2.05, 3.8, 2.6, { fs: 14, cor: C.suave });
+  bullets(s, ["Apps de idiomas (Duolingo, WaniKani): vocabulário, gramática e pronúncia, não a letra", "Ferramentas de HTR/OCR: transcrevem o que foi escrito, sem julgar como foi escrito"], 0.8, 2.05, 3.8, 2.6, { fs: 14, cor: C.suave });
   cartao(s, 5.15, 1.35, 4.35, 3.5, { fill: C.azul, line: C.azul });
   s.addText("Objetivo do trabalho", { x: 5.45, y: 1.55, w: 3.8, h: 0.4, fontFace: COR, fontSize: 16, bold: true, color: C.claro, isTextBox: true, margin: 0 });
-  s.addText("Um sistema que transcreve o texto manuscrito, dá uma nota explicável a cada letra e apoia a prática — com progresso sincronizado entre aplicativo e site.", { x: 5.45, y: 2.05, w: 3.8, h: 1.4, fontFace: COR, fontSize: 14, color: C.claro, isTextBox: true, margin: 0, valign: "top" });
+  s.addText("Um sistema que transcreve o texto manuscrito, atribui uma nota justificada a cada letra e apoia a prática, com progresso sincronizado entre aplicativo e site.", { x: 5.45, y: 2.05, w: 3.8, h: 1.4, fontFace: COR, fontSize: 14, color: C.claro, isTextBox: true, margin: 0, valign: "top" });
   bullets(s, ["Pipeline de imagem (OpenCV)", "Transcrição online e offline", "Avaliador híbrido: CNN + geometria", "Interface e nuvem (PyQt5, React, Firebase)"], 5.45, 3.4, 3.8, 1.4, { fs: 13, cor: "E6EEFB", esp: 3 });
   rodape(s, n);
   notas(s, "As plataformas educacionais populares não olham para a letra; as de reconhecimento só transcrevem. O objetivo é unir reconhecimento e avaliação numa ferramenta de prática. (~40 s)");
@@ -117,7 +117,7 @@ let n = 0;
     s.addText(d, { x: x + 0.2, y: 3.6, w: 2.5, h: 1.25, fontFace: COR, fontSize: 12, color: C.suave, isTextBox: true, margin: 0, valign: "top" });
   });
   rodape(s, n);
-  notas(s, "Antes de qualquer IA, a foto é limpa e cada letra é isolada. Os dois problemas clássicos — letra quebrada em pedaços e letras encostadas — receberam tratamento próprio. (~45 s)");
+  notas(s, "Antes de qualquer IA, a foto é limpa e cada letra é isolada. Os dois problemas clássicos, letra quebrada em pedaços e letras encostadas, receberam tratamento próprio. (~45 s)");
 }
 
 // 6 ── transcricao
@@ -127,7 +127,7 @@ let n = 0;
   cartao(s, 0.5, 1.35, 4.35, 3.5, { sombra: true });
   s.addText("Google Cloud Vision", { x: 0.8, y: 1.55, w: 3.8, h: 0.4, fontFace: COR, fontSize: 17, bold: true, color: C.texto, isTextBox: true, margin: 0 });
   s.addText("motor principal · online", { x: 0.8, y: 1.95, w: 3.8, h: 0.3, fontFace: COR, fontSize: 12, italic: true, color: C.azul, isTextBox: true, margin: 0 });
-  bullets(s, ["Bom desempenho em português", "Múltiplas palavras e linhas (redações)", "Devolve a posição de cada símbolo → o avaliador sabe qual letra era esperada em cada recorte"], 0.8, 2.4, 3.8, 2.3, { fs: 14, cor: C.suave });
+  bullets(s, ["Bom desempenho em português", "Múltiplas palavras e linhas (redações)", "Devolve a posição de cada símbolo, então o avaliador sabe qual letra era esperada em cada recorte"], 0.8, 2.4, 3.8, 2.3, { fs: 14, cor: C.suave });
   cartao(s, 5.15, 1.35, 4.35, 3.5, { sombra: true });
   s.addText("TrOCR (Microsoft)", { x: 5.45, y: 1.55, w: 3.8, h: 0.4, fontFace: COR, fontSize: 17, bold: true, color: C.texto, isTextBox: true, margin: 0 });
   s.addText("alternativa · offline", { x: 5.45, y: 1.95, w: 3.8, h: 0.3, fontFace: COR, fontSize: 12, italic: true, color: C.ambar, isTextBox: true, margin: 0 });
@@ -144,10 +144,10 @@ let n = 0;
   s.addText("Versão 1", { x: 0.8, y: 1.6, w: 3.8, h: 0.4, fontFace: COR, fontSize: 16, bold: true, color: C.verm, isTextBox: true, margin: 0 });
   bullets(s, ["Rótulos 'boa/aceitável/ruim' gerados pela variância de pixels do EMNIST", "A CNN aprendeu a medir quantidade de tinta, não forma", "Traço grosso = 'boa'. Até um rabisco aleatório recebia nota 100"], 0.8, 2.05, 3.8, 2.6, { fs: 14, cor: "C7CEDB" });
   cartao(s, 5.15, 1.4, 4.35, 3.4, { fill: C.painel, line: "2C3140" });
-  s.addText("Versão 2 — avaliador híbrido", { x: 5.45, y: 1.6, w: 3.8, h: 0.4, fontFace: COR, fontSize: 16, bold: true, color: C.verde, isTextBox: true, margin: 0 });
-  bullets(s, ["Legibilidade: CNN reconhece qual letra é (rótulos reais)", "Formação: 5 medidas geométricas contra moldes de letra de forma", "Nota explicável: o usuário recebe o motivo, não só o número"], 5.45, 2.05, 3.8, 2.6, { fs: 14, cor: "C7CEDB" });
+  s.addText("Versão 2: avaliador híbrido", { x: 5.45, y: 1.6, w: 3.8, h: 0.4, fontFace: COR, fontSize: 16, bold: true, color: C.verde, isTextBox: true, margin: 0 });
+  bullets(s, ["Legibilidade: CNN reconhece qual letra é (rótulos reais)", "Formação: 5 medidas geométricas contra moldes de letra de forma", "Nota justificada: o usuário recebe o motivo, além do número"], 5.45, 2.05, 3.8, 2.6, { fs: 14, cor: "C7CEDB" });
   rodape(s, n);
-  notas(s, "A lição mais importante do projeto. A primeira versão treinava uma rede, mas os rótulos eram inventados a partir da variância de pixels; ela aprendeu a medir tinta. Só a validação com escrita real revelou isso. A solução foi separar o que a rede sabe fazer — reconhecer letras — do que é explicável — geometria. (~60 s)");
+  notas(s, "A lição mais importante do projeto. A primeira versão treinava uma rede, mas os rótulos eram inventados a partir da variância de pixels; ela aprendeu a medir tinta. Só a validação com escrita real revelou isso. A solução foi separar as tarefas: a rede reconhece as letras e a geometria descreve a forma. (~60 s)");
 }
 
 // 8 ── avaliador: como funciona
@@ -164,7 +164,7 @@ let n = 0;
   s.addText([{ text: "nota = 100 · √legibilidade · formação", options: { color: C.claro } }, { text: "1,25", options: { color: C.claro, superscript: true } }], { x: 0.75, y: 4.05, w: 5.1, h: 0.9, fontFace: TIT, fontSize: 18, bold: true, valign: "middle", isTextBox: true, margin: 0 });
   s.addText([{ text: "Boa ≥ 75", options: { color: C.verde, bold: true } }, { text: "   Aceitável ≥ 50", options: { color: C.ambar, bold: true } }, { text: "   Ruim < 50", options: { color: C.verm, bold: true } }, { text: "\nExercício aceita a letra com nota ≥ 65", options: { color: "C7CEDB" } }], { x: 5.95, y: 4.05, w: 3.4, h: 0.9, fontFace: COR, fontSize: 11.5, valign: "middle", isTextBox: true, margin: 0 });
   rodape(s, n);
-  notas(s, "A legibilidade funciona como porta: letra irreconhecível nunca pontua bem. A formação manda na nota, porque o critério é parecer o molde de letra de forma. Tudo configurável. (~50 s)");
+  notas(s, "A legibilidade é condição necessária: letra irreconhecível nunca pontua bem. A formação determina a nota, porque o critério é aproximar-se do molde de letra de forma. Todos os limiares são configuráveis. (~50 s)");
 }
 
 // 9 ── analise individual
@@ -227,14 +227,14 @@ let n = 0;
     [{ text: "Caso (alvo: A)", options: { bold: true } }, { text: "Legib.", options: { bold: true } }, { text: "Form.", options: { bold: true } }, { text: "Nota", options: { bold: true } }, { text: "Categoria", options: { bold: true } }],
     ["Letra limpa de fonte", "1,00", "0,99", "99,9", { text: "Boa", options: { color: C.verde, bold: true } }],
     ["Letras bem formadas em foto (média)", "0,97", "0,83", "77–86", { text: "Boa", options: { color: C.verde, bold: true } }],
-    ["A arredondado, pernas abertas", "0,99", "0,66", "59,4", { text: "Aceitável — reprova", options: { color: C.ambar, bold: true } }],
+    ["A arredondado, pernas abertas", "0,99", "0,66", "59,4", { text: "Aceitável (reprova)", options: { color: C.ambar, bold: true } }],
     ["A descuidado no quadro", "1,00", "0,49", "41,9", { text: "Ruim", options: { color: C.verm, bold: true } }],
     ["Rabisco aleatório", "0,00", "0,46", "1,9", { text: "Ruim", options: { color: C.verm, bold: true } }],
     ["Letra O no lugar de A", "0,00", "0,40", "0,8", { text: "Ruim", options: { color: C.verm, bold: true } }],
   ];
   s.addTable(linhas, { x: 0.5, y: 3.05, w: 9, colW: [3.6, 1.1, 1.1, 1.0, 2.2], fontFace: COR, fontSize: 11, color: C.texto, border: { type: "solid", color: "E3E7EE", pt: 0.75 }, fill: { color: C.claro }, rowH: 0.27, margin: [2, 6, 2, 6] });
   rodape(s, n);
-  notas(s, "A rede acerta 93,9% das letras do EMNIST. Mas o resultado que importa é a tabela: a letra limpa tira quase 100, o A arredondado é reconhecido mas reprova, e rabisco e letra trocada ficam perto de zero — exatamente a ordem que um professor daria. (~50 s)");
+  notas(s, "A rede acerta 93,9% das letras do EMNIST. Mas o resultado que importa é a tabela: a letra limpa tira quase 100, o A arredondado é reconhecido mas reprova, e rabisco e letra trocada ficam perto de zero, na mesma ordem que um professor daria. (~50 s)");
 }
 
 // 13 ── limitacoes e futuro
@@ -246,7 +246,7 @@ let n = 0;
   bullets(s, ["Moldes tipográficos: estilos pessoais válidos (letra condensada) perdem pontos", "Calibração com casos sintéticos e poucas amostras reais do autor", "Fotos com letras muito próximas ou iluminação irregular", "Só letra de forma; offline restrito a palavra única"], 0.8, 1.95, 3.8, 3.0, { fs: 13, cor: C.suave });
   cartao(s, 5.15, 1.3, 4.35, 3.75, { fill: C.azul, line: C.azul });
   s.addText("Próximos passos", { x: 5.45, y: 1.45, w: 3.8, h: 0.4, fontFace: COR, fontSize: 16, bold: true, color: C.claro, isTextBox: true, margin: 0 });
-  bullets(s, ["Coletar letras de vários escritores rotuladas por pessoas → medir concordância e ajustar pesos com dados", "Publicar pacote instalável (release)", "Site como PWA no celular, com um serviço expondo o avaliador", "Avaliação pedagógica com usuários reais"], 5.45, 1.95, 3.8, 3.0, { fs: 13, cor: "E6EEFB" });
+  bullets(s, ["Coletar letras de vários escritores rotuladas por pessoas, para medir concordância e ajustar pesos com dados", "Publicar pacote instalável (release)", "Site como PWA no celular, com um serviço expondo o avaliador", "Avaliação pedagógica com usuários reais"], 5.45, 1.95, 3.8, 3.0, { fs: 13, cor: "E6EEFB" });
   rodape(s, n);
   notas(s, "Sou honesto sobre os limites: o molde tipográfico penaliza estilos válidos e a calibração ainda usa poucas amostras reais. O próximo passo natural é a validação com vários escritores e avaliadores humanos. (~40 s)");
 }
@@ -255,11 +255,11 @@ let n = 0;
 {
   const s = pres.addSlide(); n++; s.background = { color: C.escuro };
   s.addText("Conclusão", { x: 0.6, y: 0.5, w: 8.8, h: 0.6, fontFace: TIT, fontSize: 30, bold: true, color: C.claro, isTextBox: true, margin: 0 });
-  bullets(s, ["Sistema funcional de ponta a ponta: transcreve, avalia letra por letra e apoia a prática, com progresso sincronizado", "A rede responde pelo que sabe (reconhecer letras); a geometria pelo que é explicável (forma, proporção, inclinação)", "O usuário recebe a nota e o motivo — e vê no mapa onde o traço saiu do molde"], 0.6, 1.3, 8.6, 2.2, { fs: 15, cor: "C7CEDB", esp: 8 });
+  bullets(s, ["Sistema completo: transcreve, avalia letra por letra e apoia a prática, com progresso sincronizado", "A rede reconhece as letras; as medidas geométricas descrevem forma, proporção e inclinação", "O usuário recebe a nota e o motivo, e vê no mapa onde o traço saiu do molde"], 0.6, 1.3, 8.6, 2.2, { fs: 15, cor: "C7CEDB", esp: 8 });
   ["C", "A", "S", "A"].forEach((l, i) => chip(s, 0.6 + i * 0.75, 3.75, l, [C.verde, C.verde, C.ambar, C.verm][i], 0.62));
   s.addText("Obrigado!", { x: 0.6, y: 4.45, w: 4, h: 0.6, fontFace: TIT, fontSize: 28, bold: true, color: C.claro, isTextBox: true, margin: 0 });
   s.addText("lucca.vco@puccampinas.edu.br  ·  github.com/Luccavco/Corretor-de-Caligrafia", { x: 3.2, y: 4.6, w: 6.3, h: 0.35, fontFace: COR, fontSize: 11, color: "9AA3B5", align: "right", isTextBox: true, margin: 0 });
-  notas(s, "Concluindo: o sistema faz o que se propôs, e a lição de projeto foi separar o papel da rede do papel da geometria. Agradeço ao professor Antonio Forster pela orientação e à PUC-Campinas. Estou à disposição para perguntas. (~35 s)");
+  notas(s, "Concluindo: o sistema faz o que se propôs, e a lição de projeto foi separar o papel da rede do papel das medidas geométricas. Agradeço ao professor Antonio Forster pela orientação e à PUC-Campinas. Estou à disposição para perguntas. (~35 s)");
 }
 
 pres.writeFile({ fileName: OUT }).then(() => console.log("gravado", OUT, n, "slides"));
